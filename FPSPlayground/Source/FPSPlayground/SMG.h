@@ -36,6 +36,9 @@ public:
 
 	//Fires SMG Projectile
 	void OnFire();
+	void OnRelease();
+
+	void CanShoot();
 
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
@@ -49,14 +52,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
 
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
-
-	class UAnimInstance* AnimInstance;
-
-private:
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Setup, meta = (AllowPrivateAccess = "true"))
 	AFPSPlaygroundCharacter* FPSCharacter;
+	
+private:
+
+	UPROPERTY(EditAnywhere, Category = "Firing")
+	float FireRate = 0.08;
+
+	UPROPERTY(EditAnywhere, Category = "Firing")
+	float ShootDelay = 0.05;
+
+	bool bCanShoot = true;
+
+	bool bIsFiring = false;
 };

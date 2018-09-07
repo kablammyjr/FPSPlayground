@@ -43,6 +43,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetIsFiring();
 
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	class UAnimMontage* FireAnimation;
+
 protected:
 
 	void PullTrigger();
@@ -84,6 +88,5 @@ private:
 	ASMG* SMG;
 
 	bool bIsFiring = false;
-
 };
 

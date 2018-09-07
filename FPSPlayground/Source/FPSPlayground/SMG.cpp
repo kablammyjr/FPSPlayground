@@ -46,39 +46,51 @@ void ASMG::Tick(float DeltaTime)
 
 void ASMG::OnFire()
 {
-	// try and fire a projectile
-	if (ProjectileClass != NULL)
+	if (bCanShoot)
 	{
-		UWorld* const World = GetWorld();
-		if (World != NULL)
+		bIsFiring = true;
+		// try and fire a projectile
+		if (ProjectileClass != NULL)
 		{
-			const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				if (bIsFiring)
+				{
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation();
+					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
 
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+					//Set Spawn Collision Handling Override
+					FActorSpawnParameters ActorSpawnParams;
+					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-			// spawn the projectile at the muzzle
-			World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+					// spawn the projectile at the muzzle
+					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 
+					FTimerHandle FuzeTimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnFire, FireRate, false);
+				}
+			}
+		}
+		// try and play the sound if specified
+		if (FireSound != NULL)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 		}
 	}
-	// try and play the sound if specified
-	if (FireSound != NULL)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
+}
 
-	// try and play a firing animation if specified
-	if (FireAnimation != nullptr && AnimInstance != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		
-		
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		
-	}
+void ASMG::OnRelease()
+{
+	bCanShoot = false;
+	bIsFiring = false;
+	FTimerHandle FuzeTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanShoot, FireRate, false);
+}
+
+void ASMG::CanShoot()
+{
+	bCanShoot = true;
 }
 
