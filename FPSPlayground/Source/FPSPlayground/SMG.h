@@ -51,9 +51,6 @@ public:
 	/** Sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Setup, meta = (AllowPrivateAccess = "true"))
-	AFPSPlaygroundCharacter* FPSCharacter;
 	
 private:
 
@@ -66,4 +63,10 @@ private:
 	bool bCanShoot = true;
 
 	bool bIsFiring = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Setup, meta = (AllowPrivateAccess = "true"))
+	AFPSPlaygroundCharacter* FPSCharacter;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Setup")
+	TSubclassOf<class ASMG> SMGBlueprint;
 };

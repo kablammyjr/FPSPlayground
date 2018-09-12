@@ -3,6 +3,7 @@
 #include "SMG.h"
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "FPSPlaygroundCharacter.h"
 
 
@@ -25,7 +26,7 @@ ASMG::ASMG()
 	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
 	// Default offset from the character location for projectiles to spawn
-	GunOffset = FVector(100.0f, 0.0f, 10.0f);
+	GunOffset = FVector(100.0f, 0.0f, 10.0f); 
 
 	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, FP_Gun, and VR_Gun 
 	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
@@ -57,7 +58,9 @@ void ASMG::OnFire()
 			{
 				if (bIsFiring)
 				{
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation();
+					auto BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
 

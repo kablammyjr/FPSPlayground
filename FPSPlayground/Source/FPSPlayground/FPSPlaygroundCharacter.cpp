@@ -38,8 +38,6 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
-
-	//AnimInstance = Mesh1P->GetAnimInstance();
 }
 
 void AFPSPlaygroundCharacter::BeginPlay()
@@ -121,16 +119,6 @@ void AFPSPlaygroundCharacter::PullTrigger()
 {
 	SMG->OnFire();
 	bIsFiring = true;
-	if (FireAnimation != NULL)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != NULL)
-		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		}
-		
-	}
 }
 
 void AFPSPlaygroundCharacter::ReleaseTrigger()
@@ -142,4 +130,17 @@ void AFPSPlaygroundCharacter::ReleaseTrigger()
 bool AFPSPlaygroundCharacter::GetIsFiring()
 {
 	return bIsFiring;
+}
+
+void AFPSPlaygroundCharacter::PlayRecoilAnimation()
+{
+	if (FireAnimation != nullptr)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(FireAnimation, 1.f);
+		}
+	}
 }
