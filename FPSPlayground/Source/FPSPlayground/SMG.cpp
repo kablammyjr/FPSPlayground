@@ -58,7 +58,14 @@ void ASMG::OnFire()
 			{
 				if (bIsFiring)
 				{
-					auto BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+					if (bIsMoving)
+					{
+						BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+					} 
+					else
+					{
+						BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+					}
 
 					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
@@ -80,6 +87,7 @@ void ASMG::OnFire()
 					{
 						return;
 					}
+					
 				}
 			}
 		}
@@ -103,8 +111,8 @@ void ASMG::OnContinuousFire()
 			if (World != NULL)
 			{
 				if (bIsFiring)
-				{
-					auto BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+				{			
+					BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
 
 					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
@@ -141,5 +149,10 @@ void ASMG::OnRelease()
 void ASMG::CanShoot()
 {
 	bCanShoot = true;
+}
+
+void ASMG::IsMoving(bool IsMoving)
+{
+	bIsMoving = IsMoving;
 }
 

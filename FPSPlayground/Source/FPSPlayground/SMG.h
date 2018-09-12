@@ -41,6 +41,9 @@ public:
 
 	void CanShoot();
 
+	UFUNCTION(BlueprintCallable)
+	void IsMoving(bool IsMoving);
+
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AFPSPlaygroundProjectile> ProjectileClass;
@@ -70,4 +73,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
 	TSubclassOf<class ASMG> SMGBlueprint;
+
+	FRotator BulletRotation;
+
+	bool bIsMoving;
 };
