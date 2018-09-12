@@ -58,7 +58,7 @@ void ASMG::OnFire()
 			{
 				if (bIsFiring)
 				{
-					auto BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+					auto BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
 
 					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
@@ -71,8 +71,54 @@ void ASMG::OnFire()
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 
+					if (bCanShoot && bIsFiring)
+					{
+						FTimerHandle FuzeTimerHandle;
+						GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
+					}
+					else
+					{
+						return;
+					}
+				}
+			}
+		}
+		// try and play the sound if specified
+		if (FireSound != NULL)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+	}
+}
+
+void ASMG::OnContinuousFire()
+{
+	if (bCanShoot)
+	{
+		bIsFiring = true;
+		// try and fire a projectile
+		if (ProjectileClass != NULL)
+		{
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				if (bIsFiring)
+				{
+					auto BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
+					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+
+					//Set Spawn Collision Handling Override
+					FActorSpawnParameters ActorSpawnParams;
+					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+					// spawn the projectile at the muzzle
+					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+								
 					FTimerHandle FuzeTimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnFire, FireRate, false);
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);					
 				}
 			}
 		}

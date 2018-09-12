@@ -36,6 +36,7 @@ public:
 
 	//Fires SMG Projectile
 	void OnFire();
+	void OnContinuousFire();
 	void OnRelease();
 
 	void CanShoot();
