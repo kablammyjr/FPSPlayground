@@ -3,6 +3,8 @@
 #include "FPSPlaygroundProjectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 AFPSPlaygroundProjectile::AFPSPlaygroundProjectile() 
 {
@@ -27,6 +29,10 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
+	MuzzleFlash = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComp"));
+	MuzzleFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	MuzzleFlash->bAutoActivate = true;
+
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
 }
@@ -36,7 +42,12 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
 	{
-		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
+		if (OtherComp->IsSimulatingPhysics())
+		{
+			OtherComp->AddImpulseAtLocation(GetVelocity() * 500.0f, GetActorLocation());
+		}
+
+		MuzzleFlash
 
 		Destroy();
 	}

@@ -72,6 +72,9 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseTrigger);
 
+	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
+	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
+
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSPlaygroundCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSPlaygroundCharacter::MoveRight);
@@ -143,4 +146,14 @@ void AFPSPlaygroundCharacter::PlayRecoilAnimation()
 			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
 	}
+}
+
+void AFPSPlaygroundCharacter::OnADS()
+{
+	ADS = true;
+}
+
+void AFPSPlaygroundCharacter::ReleaseADS()
+{
+	ADS = false;
 }

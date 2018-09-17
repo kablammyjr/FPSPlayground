@@ -55,6 +55,8 @@ public:
 	/** Sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
+
+
 	
 private:
 
@@ -62,7 +64,7 @@ private:
 	float FireRate = 0.08;
 
 	UPROPERTY(EditAnywhere, Category = "Firing")
-	float ShootDelay = 0.05;
+	float ShootDelay = 0.01;
 
 	bool bCanShoot = true;
 

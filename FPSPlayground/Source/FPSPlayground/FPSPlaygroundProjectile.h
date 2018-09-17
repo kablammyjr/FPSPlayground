@@ -19,6 +19,9 @@ class AFPSPlaygroundProjectile : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	class UProjectileMovementComponent* ProjectileMovement;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystemComponent* MuzzleFlash;
+
 public:
 	AFPSPlaygroundProjectile();
 

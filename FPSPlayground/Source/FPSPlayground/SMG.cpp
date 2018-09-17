@@ -20,13 +20,14 @@ ASMG::ASMG()
 	FP_Gun->CastShadow = false;
 	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
 	//FP_Gun->SetupAttachment(RootComponent);
+	RootComponent = FP_Gun;
 
 	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
 	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
 	// Default offset from the character location for projectiles to spawn
-	GunOffset = FVector(100.0f, 0.0f, 10.0f); 
+	GunOffset = FVector(0.0f, 0.0f, 0.0f); 
 
 	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, FP_Gun, and VR_Gun 
 	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
@@ -67,9 +68,9 @@ void ASMG::OnFire()
 						BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
 					}
 
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation()/** + BulletRotation*/;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
 
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
@@ -78,16 +79,8 @@ void ASMG::OnFire()
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 
-					if (bCanShoot && bIsFiring)
-					{
-						FTimerHandle FuzeTimerHandle;
-						GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
-					}
-					else
-					{
-						return;
-					}
-					
+					FTimerHandle FuzeTimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
 				}
 			}
 		}
@@ -101,7 +94,7 @@ void ASMG::OnFire()
 
 void ASMG::OnContinuousFire()
 {
-	if (bCanShoot)
+	if (bIsFiring)
 	{
 		bIsFiring = true;
 		// try and fire a projectile
@@ -114,9 +107,9 @@ void ASMG::OnContinuousFire()
 				{			
 					BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
 
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation()/** + BulletRotation*/;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
 
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
@@ -124,9 +117,13 @@ void ASMG::OnContinuousFire()
 
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-								
-					FTimerHandle FuzeTimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);					
+
+					if (bIsFiring)
+					{
+						FTimerHandle FuzeTimerHandle;
+						GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
+					}
+					else { return; }
 				}
 			}
 		}
@@ -142,8 +139,9 @@ void ASMG::OnRelease()
 {
 	bCanShoot = false;
 	bIsFiring = false;
-	FTimerHandle FuzeTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanShoot, FireRate, false);
+	//FTimerHandle FuzeTimerHandle;
+	//GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanShoot, ShootDelay, false);
+	CanShoot();
 }
 
 void ASMG::CanShoot()

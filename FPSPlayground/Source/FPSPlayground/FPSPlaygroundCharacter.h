@@ -50,6 +50,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PlayRecoilAnimation();
 
+	UFUNCTION(BlueprintCallable)
+	void OnADS();
+
+	UFUNCTION(BlueprintCallable)
+	void ReleaseADS();
+
+	bool ADS = false;
+
 protected:
 
 	void PullTrigger();
