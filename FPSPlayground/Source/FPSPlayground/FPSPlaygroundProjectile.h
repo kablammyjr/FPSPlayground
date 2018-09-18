@@ -22,6 +22,10 @@ class AFPSPlaygroundProjectile : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* MuzzleFlash;
 
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
 public:
 	AFPSPlaygroundProjectile();
 
@@ -33,5 +37,12 @@ public:
 	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
+
+private:
+
+	void MakeVisible();
+
+	UPROPERTY(EditAnywhere, Category = "Setup")
+	float TimeUntilVisible = 0.01f;
 };
 

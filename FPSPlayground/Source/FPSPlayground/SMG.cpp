@@ -24,7 +24,7 @@ ASMG::ASMG()
 
 	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
-	FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
+	//FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
 
 	// Default offset from the character location for projectiles to spawn
 	GunOffset = FVector(0.0f, 0.0f, 0.0f); 
@@ -68,7 +68,7 @@ void ASMG::OnFire()
 						BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
 					}
 
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation()/** + BulletRotation*/;
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
 
@@ -106,8 +106,8 @@ void ASMG::OnContinuousFire()
 				if (bIsFiring)
 				{			
 					BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
-
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation()/** + BulletRotation*/;
+					
+					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
 

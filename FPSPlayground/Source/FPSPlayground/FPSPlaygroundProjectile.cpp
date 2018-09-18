@@ -24,17 +24,31 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 10000.f;
-	ProjectileMovement->MaxSpeed = 10000.f;
+	ProjectileMovement->InitialSpeed = 15000.f;
+	ProjectileMovement->MaxSpeed = 15000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
 	MuzzleFlash = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComp"));
 	MuzzleFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	MuzzleFlash->bAutoActivate = true;
+	MuzzleFlash->bAutoActivate = false;
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
+}
+
+// Called when the game starts or when spawned
+void AFPSPlaygroundProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FTimerHandle FuzeTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundProjectile::MakeVisible, TimeUntilVisible, false);
+}
+
+void AFPSPlaygroundProjectile::MakeVisible()
+{
+	this->SetActorHiddenInGame(false);
 }
 
 void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -46,9 +60,6 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 		{
 			OtherComp->AddImpulseAtLocation(GetVelocity() * 500.0f, GetActorLocation());
 		}
-
-		MuzzleFlash
-
 		Destroy();
 	}
 }
