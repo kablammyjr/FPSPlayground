@@ -68,6 +68,9 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AFPSPlaygroundCharacter::StartCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSPlaygroundCharacter::StopCrouch);
+
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseTrigger);
@@ -150,10 +153,30 @@ void AFPSPlaygroundCharacter::PlayRecoilAnimation()
 
 void AFPSPlaygroundCharacter::OnADS()
 {
-	ADS = true;
+	bIsADS = true;
 }
 
 void AFPSPlaygroundCharacter::ReleaseADS()
 {
-	ADS = false;
+	bIsADS = false;
+}
+
+void AFPSPlaygroundCharacter::StartCrouch()
+{
+	Crouch();
+}
+
+void AFPSPlaygroundCharacter::StopCrouch()
+{
+	UnCrouch();
+}
+
+bool AFPSPlaygroundCharacter::GetIsADS()
+{
+	return bIsADS;
+}
+
+bool AFPSPlaygroundCharacter::GetIsCrouched()
+{
+	return bIsCrouched;
 }

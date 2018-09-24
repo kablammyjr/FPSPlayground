@@ -56,7 +56,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
 
-
+	UFUNCTION(BlueprintCallable)
+	void IsADS(bool ADSStatus);
 	
 private:
 
@@ -70,8 +71,8 @@ private:
 
 	bool bIsFiring = false;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Setup, meta = (AllowPrivateAccess = "true"))
-	AFPSPlaygroundCharacter* FPSCharacter;
+	UPROPERTY(EditDefaultsOnly, Category = "Setup")
+	TSubclassOf<class ACharacter> FPSCharacter;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
 	TSubclassOf<class ASMG> SMGBlueprint;
@@ -79,4 +80,6 @@ private:
 	FRotator BulletRotation;
 
 	bool bIsMoving;
+
+	bool bIsADS;
 };

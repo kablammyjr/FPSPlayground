@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine.h"
 #include "GameFramework/Character.h"
 #include "FPSPlaygroundCharacter.generated.h"
 
@@ -21,6 +22,8 @@ class AFPSPlaygroundCharacter : public ACharacter
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
+
+	class UCharacterMovementComponent* CharacterMovementComponent;
 
 public:
 	AFPSPlaygroundCharacter();
@@ -56,13 +59,21 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ReleaseADS();
 
-	bool ADS = false;
+	bool GetIsCrouched();
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsADS();
+
+	bool bIsADS = false;
 
 protected:
 
 	void PullTrigger();
 
 	void ReleaseTrigger();
+
+	void StartCrouch();
+	void StopCrouch();
 
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
