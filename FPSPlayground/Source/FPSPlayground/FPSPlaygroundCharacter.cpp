@@ -146,7 +146,15 @@ void AFPSPlaygroundCharacter::PlayRecoilAnimation()
 		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
 		if (AnimInstance != nullptr)
 		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
+			if (bCanRecoil)
+			{
+				AnimInstance->Montage_Play(FireAnimation, 1.f);
+
+				bCanRecoil = false;
+
+				FTimerHandle FuzeTimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
+			}
 		}
 	}
 }
@@ -179,4 +187,9 @@ bool AFPSPlaygroundCharacter::GetIsADS()
 bool AFPSPlaygroundCharacter::GetIsCrouched()
 {
 	return bIsCrouched;
+}
+
+void AFPSPlaygroundCharacter::CanRecoil()
+{
+	bCanRecoil = true;
 }

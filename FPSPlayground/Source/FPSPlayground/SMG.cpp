@@ -19,15 +19,11 @@ ASMG::ASMG()
 	FP_Gun->bCastDynamicShadow = false;
 	FP_Gun->CastShadow = false;
 	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
-	//FP_Gun->SetupAttachment(RootComponent);
+
 	RootComponent = FP_Gun;
 
 	FP_MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
 	FP_MuzzleLocation->SetupAttachment(FP_Gun);
-	//FP_MuzzleLocation->SetRelativeLocation(FVector(0.2f, 48.4f, -10.6f));
-
-	// Default offset from the character location for projectiles to spawn
-	GunOffset = FVector(0.0f, 0.0f, 0.0f); 
 
 	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, FP_Gun, and VR_Gun 
 	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
@@ -59,33 +55,63 @@ void ASMG::OnFire()
 			{
 				if (bIsFiring)
 				{
-					if (bIsMoving)
+					if (bIsCrouched)
 					{
-						if (bIsADS == true)
+						if (bIsADS)
 						{
-							BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-0.5f, 0.5f), FMath::RandRange(-0.5f, 0.5f), 0.0f);
+							}
 						}
 						else
 						{
-							BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.5f, 2.5f), FMath::RandRange(-2.5f, 2.5f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.5f, 1.5f), FMath::RandRange(-1.5f, 1.5f), 0.0f);
+							}
 						}
-					} 
-					else
+					}
+					else if (bIsADS)
 					{
-						if (bIsADS == true)
-						{
-							BulletRotation = FRotator(FMath::RandRange(-0.1f, 0.1f), FMath::RandRange(-0.1f, 0.1f), 0.0f);
-						}
-						else 
+						if (bIsMoving)
 						{
 							BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
 						}
-
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-3.0f, 3.0f), FMath::RandRange(-3.0f, 3.0f), 0.0f);
+						}
 					}
-
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
+					else
+					{
+						if (bIsMoving)
+						{
+							BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+						}
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-6.0f, 6.0f), FMath::RandRange(-6.0f, 6.0f), 0.0f);
+						}
+					}
+					
+					//const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
+					//const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation());
+
+					RecoilEvent();
+
+					const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
+
+					const FVector SpawnLocation = FMuzzleWorldLocation;
 
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
@@ -120,15 +146,60 @@ void ASMG::OnContinuousFire()
 			{
 				if (bIsFiring)
 				{			
-					BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+					if (bIsCrouched)
+					{
+						if (bIsADS)
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.0f, 2.0f), FMath::RandRange(-2.0f, 2.0f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+							}
+						}
+						else
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-3.5f, 3.5f), FMath::RandRange(-3.5f, 3.5f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.5f, 2.5f), FMath::RandRange(-2.5f, 2.5f), 0.0f);
+							}
+						}
+					}
+					else if (bIsADS)
+					{
+						if (bIsMoving)
+						{
+							BulletRotation = FRotator(FMath::RandRange(-5.0f, 5.0f), FMath::RandRange(-5.0f, 5.0f), 0.0f);
+						}
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+						}
+					}
+					else
+					{
+						BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+					}
 					
-					const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
+					//const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-					const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation())/** + SpawnRotation.RotateVector(GunOffset)*/;
+					//const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation());
+
+					const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
+
+					const FVector SpawnLocation = FMuzzleWorldLocation;
 
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
 					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+					RecoilEvent();
 
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
@@ -172,5 +243,16 @@ void ASMG::IsMoving(bool IsMoving)
 void ASMG::IsADS(bool ADSStatus)
 {
 	bIsADS = ADSStatus;
+}
+
+void ASMG::IsCrouched(bool CrouchStatus)
+{
+	bIsCrouched = CrouchStatus;
+}
+
+void ASMG::MuzzleWorldLocationRotation(FVector MuzzleWorldLocation, FRotator MuzzleWorldRotation)
+{
+	FMuzzleWorldLocation = MuzzleWorldLocation;
+	FMuzzleWorldRotation = MuzzleWorldRotation;
 }
 

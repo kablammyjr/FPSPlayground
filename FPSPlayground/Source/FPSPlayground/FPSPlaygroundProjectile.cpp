@@ -24,8 +24,8 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 15000.f;
-	ProjectileMovement->MaxSpeed = 15000.f;
+	ProjectileMovement->InitialSpeed = 20000.f;
+	ProjectileMovement->MaxSpeed = 20000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
@@ -58,7 +58,7 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 	{
 		if (OtherComp->IsSimulatingPhysics())
 		{
-			OtherComp->AddImpulseAtLocation(GetVelocity() * 500.0f, GetActorLocation());
+			OtherComp->AddImpulseAtLocation(GetVelocity() * 20.0f, GetActorLocation());
 		}
 		Destroy();
 	}

@@ -110,5 +110,9 @@ private:
 	ASMG* SMG;
 
 	bool bIsFiring = false;
+
+	bool bCanRecoil = true;
+
+	void CanRecoil();
 };
 

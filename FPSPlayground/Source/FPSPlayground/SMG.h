@@ -35,11 +35,18 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	//Fires SMG Projectile
+	UFUNCTION(BlueprintCallable)
 	void OnFire();
+
+	UFUNCTION(BlueprintCallable)
 	void OnContinuousFire();
+
 	void OnRelease();
 
 	void CanShoot();
+
+	UFUNCTION(Category = "Animation", BlueprintImplementableEvent)
+	void RecoilEvent();
 
 	UFUNCTION(BlueprintCallable)
 	void IsMoving(bool IsMoving);
@@ -48,17 +55,19 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AFPSPlaygroundProjectile> ProjectileClass;
 
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	FVector GunOffset;
-
 	/** Sound to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class USoundBase* FireSound;
 
 	UFUNCTION(BlueprintCallable)
 	void IsADS(bool ADSStatus);
-	
+
+	UFUNCTION(BlueprintCallable)
+	void IsCrouched(bool CrouchStatus);
+
+	UFUNCTION(BlueprintCallable)
+	void MuzzleWorldLocationRotation(FVector MuzzleWorldLocation, FRotator MuzzleWorldRotation);
+
 private:
 
 	UPROPERTY(EditAnywhere, Category = "Firing")
@@ -82,4 +91,10 @@ private:
 	bool bIsMoving;
 
 	bool bIsADS;
+
+	bool bIsCrouched;
+
+	FVector FMuzzleWorldLocation;
+
+	FRotator FMuzzleWorldRotation;
 };
