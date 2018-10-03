@@ -78,6 +78,9 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
 
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFPSPlaygroundCharacter::OnSprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFPSPlaygroundCharacter::StopSprint);
+
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSPlaygroundCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSPlaygroundCharacter::MoveRight);
@@ -93,10 +96,39 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 void AFPSPlaygroundCharacter::MoveForward(float Value)
 {
+
+	MoveForwardAxis = Value;
+
 	if (Value != 0.0f)
 	{
 		// add movement in that direction
 		AddMovementInput(GetActorForwardVector(), Value);
+	}
+
+	if (Value > 0.0f)
+	{
+		if (bOnSprint)
+		{
+			OnSprint();
+		}
+
+		if (bIsSprinting)
+		{
+			bCanFireGun = false;
+			ReleaseTrigger();
+		}
+
+		bIsWalkingForward = true;
+	}
+	else
+	{
+		if (bIsSprinting)
+		{
+			SetStopSprint();
+			bCanFireGun = true;
+		}
+
+		bIsWalkingForward = false;
 	}
 }
 
@@ -123,8 +155,11 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 
 void AFPSPlaygroundCharacter::PullTrigger()
 {
-	SMG->OnFire();
-	bIsFiring = true;
+	if (bCanFireGun)
+	{
+		SMG->OnFire();
+		bIsFiring = true;
+	}
 }
 
 void AFPSPlaygroundCharacter::ReleaseTrigger()
@@ -192,4 +227,38 @@ bool AFPSPlaygroundCharacter::GetIsCrouched()
 void AFPSPlaygroundCharacter::CanRecoil()
 {
 	bCanRecoil = true;
+}
+
+void AFPSPlaygroundCharacter::OnSprint()
+{
+	bOnSprint = true;
+
+	if (MoveForwardAxis > 0.0f)
+	{
+		SetOnSprint();
+		bIsSprinting = true;
+		bCanFireGun = false;
+
+		if (MoveForwardAxis <= 0.0f)
+		{
+			StopSprint();
+		}
+	}
+}
+
+void AFPSPlaygroundCharacter::StopSprint()
+{
+	bOnSprint = false;
+
+	if (bIsSprinting)
+	{
+		SetStopSprint();
+		bIsSprinting = false;
+		bCanFireGun = true;
+	}
+}
+
+bool AFPSPlaygroundCharacter::GetCanFireGun()
+{
+	return bCanFireGun;
 }

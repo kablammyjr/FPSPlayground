@@ -59,10 +59,21 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ReleaseADS();
 
+	UFUNCTION(BlueprintCallable)
+	bool GetCanFireGun();
+
 	bool GetIsCrouched();
+
+	bool bIsSprinting = false;
 
 	UFUNCTION(BlueprintCallable)
 	bool GetIsADS();
+
+	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
+	void SetOnSprint();
+
+	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
+	void SetStopSprint();
 
 	bool bIsADS = false;
 
@@ -74,6 +85,9 @@ protected:
 
 	void StartCrouch();
 	void StopCrouch();
+
+	void OnSprint();
+	void StopSprint();
 
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
@@ -113,6 +127,14 @@ private:
 
 	bool bCanRecoil = true;
 
+	bool bIsWalkingForward = false;
+
 	void CanRecoil();
+
+	float MoveForwardAxis;
+
+	bool bCanFireGun = true;
+
+	bool bOnSprint = false;
 };
 
