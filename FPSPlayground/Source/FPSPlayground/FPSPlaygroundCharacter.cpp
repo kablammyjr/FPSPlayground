@@ -107,18 +107,17 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 
 	if (Value > 0.0f)
 	{
-		if (bOnSprint)
+		if (!bIsCrouched)
 		{
-			OnSprint();
-		}
+			if (bOnSprint)
+			{
+				OnSprint();
+				bCanFireGun = false;
+				ReleaseTrigger();
+			}
 
-		if (bIsSprinting)
-		{
-			bCanFireGun = false;
-			ReleaseTrigger();
+			bIsWalkingForward = true;
 		}
-
-		bIsWalkingForward = true;
 	}
 	else
 	{
@@ -155,6 +154,12 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 
 void AFPSPlaygroundCharacter::PullTrigger()
 {
+	if (bIsSprinting)
+	{
+		StopSprint();
+		PullTrigger();
+	}
+
 	if (bCanFireGun)
 	{
 		SMG->OnFire();
@@ -196,7 +201,10 @@ void AFPSPlaygroundCharacter::PlayRecoilAnimation()
 
 void AFPSPlaygroundCharacter::OnADS()
 {
-	bIsADS = true;
+	if (!bIsSprinting)
+	{
+		bIsADS = true;
+	}
 }
 
 void AFPSPlaygroundCharacter::ReleaseADS()
@@ -207,11 +215,19 @@ void AFPSPlaygroundCharacter::ReleaseADS()
 void AFPSPlaygroundCharacter::StartCrouch()
 {
 	Crouch();
+	bIsSprinting = false;
+	StopSprint();
+	bCanFireGun = true;
 }
 
 void AFPSPlaygroundCharacter::StopCrouch()
 {
 	UnCrouch();
+
+	if (bOnSprint)
+	{
+		OnSprint();
+	}
 }
 
 bool AFPSPlaygroundCharacter::GetIsADS()
@@ -233,15 +249,18 @@ void AFPSPlaygroundCharacter::OnSprint()
 {
 	bOnSprint = true;
 
-	if (MoveForwardAxis > 0.0f)
+	if (!bIsCrouched)
 	{
-		SetOnSprint();
-		bIsSprinting = true;
-		bCanFireGun = false;
-
-		if (MoveForwardAxis <= 0.0f)
+		if (MoveForwardAxis > 0.0f)
 		{
-			StopSprint();
+			SetOnSprint();
+			bIsSprinting = true;
+			bCanFireGun = false;
+
+			if (MoveForwardAxis <= 0.0f)
+			{
+				StopSprint();
+			}
 		}
 	}
 }
@@ -249,10 +268,10 @@ void AFPSPlaygroundCharacter::OnSprint()
 void AFPSPlaygroundCharacter::StopSprint()
 {
 	bOnSprint = false;
+	SetStopSprint();
 
 	if (bIsSprinting)
 	{
-		SetStopSprint();
 		bIsSprinting = false;
 		bCanFireGun = true;
 	}
