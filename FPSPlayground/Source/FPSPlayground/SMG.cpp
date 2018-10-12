@@ -116,10 +116,10 @@ void ASMG::OnFire()
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
 					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
+					
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-
+					
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
 				}
