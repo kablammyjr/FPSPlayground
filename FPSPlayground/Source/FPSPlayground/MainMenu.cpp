@@ -4,9 +4,16 @@
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
-#include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
+#include "ServerList.h"
 
+UMainMenu::UMainMenu(const FObjectInitializer & ObjectInitializer)
+{
+	ConstructorHelpers::FClassFinder<UUserWidget> ServerListBPClass(TEXT("/Game/Menu/WBP_ServerList"));
+	if (!ensure(ServerListBPClass.Class != nullptr)) return;
 
+	ServerListClass = ServerListBPClass.Class;
+}
 
 bool UMainMenu::Initialize()
 {
@@ -43,9 +50,16 @@ void UMainMenu::JoinServer()
 {
 	if (MenuInterface != nullptr)
 	{
-		if (!ensure(IPAddressField != nullptr)) return;
+		/*if (!ensure(IPAddressField != nullptr)) return;
 		const FString& IPAddress = IPAddressField->GetText().ToString();
-		MenuInterface->Join(IPAddress);
+		MenuInterface->Join(IPAddress);*/
+		UWorld* World = this->GetWorld();
+		if (!ensure(World != nullptr)) return;
+
+		UServerList* List = CreateWidget<UServerList>(World, ServerListClass);
+		if (!ensure(List != nullptr)) return;
+
+		ServerList->AddChild(List);
 	}
 }
 
