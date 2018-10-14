@@ -39,6 +39,15 @@ void UFPSPlaygroundGameInstance::Init()
 		{
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnDestroySessionComplete);
+			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnFindSessionsComplete);
+
+			SessionSearch = MakeShareable(new FOnlineSessionSearch());
+			if (SessionSearch.IsValid())
+			{
+				SessionSearch->bIsLanQuery = true;
+				UE_LOG(LogTemp, Warning, TEXT("Starting to find sessions"));
+				SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+			}
 		}
 	}
 	else
@@ -74,7 +83,6 @@ void UFPSPlaygroundGameInstance::LoadInGameMenu()
 
 void UFPSPlaygroundGameInstance::Host()
 {
-	UE_LOG(LogTemp, Warning, TEXT("hostbbb"));
 	if (Menu != nullptr)
 	{ 
 		Menu->Teardown();
@@ -112,6 +120,18 @@ void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool
 	World->ServerTravel("/Game/FirstPersonCPP/Maps/FirstPersonExampleMap?listen");
 }
 
+void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
+{
+		if (Success && SessionSearch.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Finished finding sessions"));
+			for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Found sessions: %s"), *SearchResult.GetSessionIdStr());
+			}
+		}
+}
+
 void UFPSPlaygroundGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
 {
 	if (Success)
@@ -125,6 +145,10 @@ void UFPSPlaygroundGameInstance::CreateSession()
 	if (SessionInterface.IsValid())
 	{
 		FOnlineSessionSettings SessionSettings;
+		SessionSettings.bIsLANMatch = true;
+		SessionSettings.NumPublicConnections = 2;
+		SessionSettings.bShouldAdvertise = true;
+
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 	}
 }
