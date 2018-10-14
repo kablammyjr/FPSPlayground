@@ -17,8 +17,15 @@ bool UMainMenu::Initialize()
 	return true;
 }
 
+void UMainMenu::SetMenuInterface(IMenuInterface* MenuInterface)
+{
+	this->MenuInterface = MenuInterface;
+}
+
 void UMainMenu::HostServer()
 {
-	UGameplayStatics::OpenLevel(GetWorld(), TEXT("/Game/FirstPersonCPP/Maps/FirstPersonExampleMap"), TRAVEL_Absolute);
-	UE_LOG(LogTemp, Warning, TEXT("Host"));
+	if (MenuInterface != nullptr)
+	{
+		MenuInterface->Host();
+	}
 }

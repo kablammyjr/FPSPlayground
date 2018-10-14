@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "MenuInterface.h"
 #include "OnlineSubsystem.h"
 #include "FPSPlaygroundGameInstance.generated.h"
 
@@ -11,7 +12,7 @@
  * 
  */
 UCLASS()
-class FPSPLAYGROUND_API UFPSPlaygroundGameInstance : public UGameInstance
+class FPSPLAYGROUND_API UFPSPlaygroundGameInstance : public UGameInstance, public IMenuInterface
 {
 	GENERATED_BODY()
 

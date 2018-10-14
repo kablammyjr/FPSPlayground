@@ -7,6 +7,7 @@
 #include "OnlineSessionInterface.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
+#include "MainMenu.h"
 
 const static FName SESSION_NAME = TEXT("My Session Game");
 
@@ -45,7 +46,7 @@ void UFPSPlaygroundGameInstance::LoadMainMenu()
 {
 	if (!ensure(MenuClass != nullptr)) return;
 
-	UUserWidget* Menu = CreateWidget<UUserWidget>(this, MenuClass);
+	UMainMenu* Menu = CreateWidget<UMainMenu>(this, MenuClass);
 	if (!ensure(Menu != nullptr)) return;
 
 	Menu->AddToViewport();
@@ -60,6 +61,8 @@ void UFPSPlaygroundGameInstance::LoadMainMenu()
 	PlayerController->SetInputMode(InputModeData);
 
 	PlayerController->bShowMouseCursor = true;
+
+	Menu->SetMenuInterface(this);
 }
 
 void UFPSPlaygroundGameInstance::Host()
