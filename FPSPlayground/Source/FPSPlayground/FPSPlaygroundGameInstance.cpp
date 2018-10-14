@@ -3,25 +3,35 @@
 #include "FPSPlaygroundGameInstance.h"
 #include "FPSPlayerController.h"
 #include "Classes/Engine/Engine.h"
-#include "OnlineSubsystem.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSessionInterface.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Blueprint/UserWidget.h"
 
+const static FName SESSION_NAME = TEXT("My Session Game");
 
 UFPSPlaygroundGameInstance::UFPSPlaygroundGameInstance(const FObjectInitializer & ObjectInitializer)
 {
+	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/Menu/WBP_MainMenu"));
+	if (!ensure(MenuBPClass.Class != nullptr)) return;
 
+		MenuClass = MenuBPClass.Class;
 }
 
 void UFPSPlaygroundGameInstance::Init()
 {
+
+	UE_LOG(LogTemp, Warning, TEXT("Found class %s"), *MenuClass->GetName());
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	
 	if (Subsystem != nullptr && Subsystem != NULL)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Found subsystem %s"), *Subsystem->GetSubsystemName().ToString());
-		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+		SessionInterface = Subsystem->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Found session interface"));
+			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnCreateSessionComplete);
+			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnDestroySessionComplete);
 		}
 	}
 	else
@@ -31,8 +41,50 @@ void UFPSPlaygroundGameInstance::Init()
 	
 }
 
+void UFPSPlaygroundGameInstance::LoadMainMenu()
+{
+	if (!ensure(MenuClass != nullptr)) return;
+
+	UUserWidget* Menu = CreateWidget<UUserWidget>(this, MenuClass);
+	if (!ensure(Menu != nullptr)) return;
+
+	Menu->AddToViewport();
+
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!ensure(PlayerController != nullptr)) return;
+
+	FInputModeUIOnly InputModeData;
+	InputModeData.SetWidgetToFocus(Menu->TakeWidget());
+	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+	PlayerController->SetInputMode(InputModeData);
+
+	PlayerController->bShowMouseCursor = true;
+}
+
 void UFPSPlaygroundGameInstance::Host()
 {
+	if (SessionInterface.IsValid())
+	{
+		auto ExistingSession = SessionInterface->GetNamedSession(SESSION_NAME);
+		if (ExistingSession != nullptr)
+		{
+			SessionInterface->DestroySession(SESSION_NAME);
+		}
+		else
+		{
+			CreateSession();
+		}
+	}
+}
+
+void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
+{
+	if (!Success) 
+	{ 
+		UE_LOG(LogTemp, Warning, TEXT("Could not create session"));
+		return; 
+	}
 	UEngine* Engine = GetEngine();
 	if (!ensure(Engine != nullptr)) return;
 
@@ -42,6 +94,23 @@ void UFPSPlaygroundGameInstance::Host()
 	if (!ensure(World != nullptr)) return;
 
 	World->ServerTravel("/Game/FirstPersonCPP/Maps/FirstPersonExampleMap?listen");
+}
+
+void UFPSPlaygroundGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
+{
+	if (Success)
+	{
+		CreateSession();
+	}
+}
+
+void UFPSPlaygroundGameInstance::CreateSession()
+{
+	if (SessionInterface.IsValid())
+	{
+		FOnlineSessionSettings SessionSettings;
+		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
+	}
 }
 
 void UFPSPlaygroundGameInstance::Join(const FString& Address)

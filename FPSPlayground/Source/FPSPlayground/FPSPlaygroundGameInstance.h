@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSubsystem.h"
 #include "FPSPlaygroundGameInstance.generated.h"
 
 /**
@@ -19,9 +20,24 @@ public:
 	
 	virtual void Init();
 
+	UFUNCTION(BlueprintCallable)
+	void LoadMainMenu();
+
 	UFUNCTION(Exec)
 	void Host();
 
 	UFUNCTION(Exec)
 	void Join(const FString& Address);
+
+private:
+
+	TSubclassOf<class UUserWidget> MenuClass;
+
+	IOnlineSessionPtr SessionInterface;
+
+	void OnCreateSessionComplete(FName SessionName, bool Success);
+
+	void OnDestroySessionComplete(FName SessionName, bool Success);
+
+	void CreateSession();
 };
