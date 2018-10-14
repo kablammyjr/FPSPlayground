@@ -74,6 +74,7 @@ void UFPSPlaygroundGameInstance::LoadInGameMenu()
 
 void UFPSPlaygroundGameInstance::Host()
 {
+	UE_LOG(LogTemp, Warning, TEXT("hostbbb"));
 	if (Menu != nullptr)
 	{ 
 		Menu->Teardown();

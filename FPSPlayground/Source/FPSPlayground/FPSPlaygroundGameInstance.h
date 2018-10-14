@@ -29,7 +29,7 @@ public:
 
 	virtual void LoadMainMenuLevel() override;
 
-	UFUNCTION(Exec)
+	UFUNCTION()
 	void Host() override;
 
 	UFUNCTION(Exec)

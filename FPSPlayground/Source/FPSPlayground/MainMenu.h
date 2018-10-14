@@ -27,6 +27,9 @@ private:
 	class UButton* JoinButton;
 
 	UPROPERTY(meta = (BindWidget))
+	class UButton* QuitButton;
+
+	UPROPERTY(meta = (BindWidget))
 	class UButton* JoinMenuJoinButton;
 
 	UPROPERTY(meta = (BindWidget))
@@ -51,10 +54,11 @@ private:
 	void JoinServer();
 
 	UFUNCTION()
+	void QuitGame();
+
+	UFUNCTION()
 	void OpenMainMenu();
 
 	UFUNCTION()
 	void OpenJoinMenu();
-
-	IMenuInterface* MenuInterface;
 };
