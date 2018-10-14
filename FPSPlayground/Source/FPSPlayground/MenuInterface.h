@@ -25,5 +25,4 @@ public:
 	
 	virtual void Host() = 0;
 
-
 };

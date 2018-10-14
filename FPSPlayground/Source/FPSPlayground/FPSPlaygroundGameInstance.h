@@ -34,6 +34,8 @@ private:
 
 	TSubclassOf<class UUserWidget> MenuClass;
 
+	class UMainMenu* Menu;
+
 	IOnlineSessionPtr SessionInterface;
 
 	void OnCreateSessionComplete(FName SessionName, bool Success);
