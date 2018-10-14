@@ -8,6 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MainMenu.h"
+#include "MenuWidget.h"
 
 const static FName SESSION_NAME = TEXT("My Session Game");
 
@@ -17,6 +18,11 @@ UFPSPlaygroundGameInstance::UFPSPlaygroundGameInstance(const FObjectInitializer 
 	if (!ensure(MenuBPClass.Class != nullptr)) return;
 
 		MenuClass = MenuBPClass.Class;
+
+	ConstructorHelpers::FClassFinder<UUserWidget> InGameMenuBPClass(TEXT("/Game/Menu/WBP_InGameMenu"));
+	if (!ensure(InGameMenuBPClass.Class != nullptr)) return;
+
+	InGameMenuClass = InGameMenuBPClass.Class;
 }
 
 void UFPSPlaygroundGameInstance::Init()
@@ -47,6 +53,18 @@ void UFPSPlaygroundGameInstance::LoadMainMenu()
 	if (!ensure(MenuClass != nullptr)) return;
 
 	Menu = CreateWidget<UMainMenu>(this, MenuClass);
+	if (!ensure(Menu != nullptr)) return;
+
+	Menu->Setup();
+
+	Menu->SetMenuInterface(this);
+}
+
+void UFPSPlaygroundGameInstance::LoadInGameMenu()
+{
+	if (!ensure(MenuClass != nullptr)) return;
+
+	UMenuWidget* Menu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
 	if (!ensure(Menu != nullptr)) return;
 
 	Menu->Setup();
@@ -126,4 +144,12 @@ void UFPSPlaygroundGameInstance::Join(const FString& Address)
 	if (!ensure(PlayerController != nullptr)) return;
 
 	PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+}
+
+void UFPSPlaygroundGameInstance::LoadMainMenuLevel()
+{
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!ensure(PlayerController != nullptr)) return;
+
+	PlayerController->ClientTravel("/Game/Menu/MainMenu", ETravelType::TRAVEL_Absolute);
 }

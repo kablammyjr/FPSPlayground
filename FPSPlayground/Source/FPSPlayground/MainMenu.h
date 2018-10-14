@@ -4,23 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "MenuInterface.h"
+#include "MenuWidget.h"
 #include "MainMenu.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FPSPLAYGROUND_API UMainMenu : public UUserWidget
+class FPSPLAYGROUND_API UMainMenu : public UMenuWidget
 {
 	GENERATED_BODY()
-
-public:
-
-	void SetMenuInterface(IMenuInterface* MenuInterface);
-
-	void Setup();
-	void Teardown();
 
 protected:
 
