@@ -73,4 +73,6 @@ private:
 	void OpenJoinMenu();
 
 	TOptional<uint32> SelectedIndex;
+
+	void UpdateChildren();
 };

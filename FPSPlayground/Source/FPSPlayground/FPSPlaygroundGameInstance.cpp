@@ -132,6 +132,11 @@ void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
 			UE_LOG(LogTemp, Warning, TEXT("Finished finding sessions"));
 
 			TArray<FString> ServerNames;
+			ServerNames.Add("Test Server1");
+			ServerNames.Add("Test Server2");
+			ServerNames.Add("Test Server3");
+			ServerNames.Add("Test Server4");
+			ServerNames.Add("Test Server5");
 			for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Found sessions: %s"), *SearchResult.GetSessionIdStr());
