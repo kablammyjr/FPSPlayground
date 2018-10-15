@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "MenuInterface.h"
 #include "OnlineSubsystem.h"
+#include "OnlineSessionInterface.h"
 #include "FPSPlaygroundGameInstance.generated.h"
 
 /**
@@ -29,11 +30,13 @@ public:
 
 	virtual void LoadMainMenuLevel() override;
 
+	virtual void RefreshServerList();
+
 	UFUNCTION()
 	void Host() override;
 
 	UFUNCTION(Exec)
-	void Join(const FString& Address) override;
+	void Join(uint32 Index) override;
 
 private:
 
@@ -51,6 +54,8 @@ private:
 	void OnDestroySessionComplete(FName SessionName, bool Success);
 
 	void OnFindSessionsComplete(bool Success);
+
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
 	void CreateSession();
 };

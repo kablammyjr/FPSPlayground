@@ -13,8 +13,26 @@ UCLASS()
 class FPSPLAYGROUND_API UServerList : public UUserWidget
 {
 	GENERATED_BODY()
-	
-	
+
+public:
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* ServerName;
+
+	void Setup(class UMainMenu* InParent, uint32 InIndex);
+
+private:
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* ListButton;
+
+	UPROPERTY()
+	class UMainMenu* Parent;
+
+	uint32 Index;
+
+	UFUNCTION()
+	void OnClicked();
 	
 	
 };

@@ -4,7 +4,6 @@
 #include "FPSPlayerController.h"
 #include "Classes/Engine/Engine.h"
 #include "OnlineSessionSettings.h"
-#include "OnlineSessionInterface.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MainMenu.h"
@@ -40,14 +39,7 @@ void UFPSPlaygroundGameInstance::Init()
 			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnDestroySessionComplete);
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnFindSessionsComplete);
-
-			SessionSearch = MakeShareable(new FOnlineSessionSearch());
-			if (SessionSearch.IsValid())
-			{
-				SessionSearch->bIsLanQuery = true;
-				UE_LOG(LogTemp, Warning, TEXT("Starting to find sessions"));
-				SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-			}
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UFPSPlaygroundGameInstance::OnJoinSessionComplete);
 		}
 	}
 	else
@@ -120,15 +112,31 @@ void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool
 	World->ServerTravel("/Game/FirstPersonCPP/Maps/FirstPersonExampleMap?listen");
 }
 
+void UFPSPlaygroundGameInstance::RefreshServerList()
+{
+	SessionSearch = MakeShareable(new FOnlineSessionSearch());
+	if (SessionSearch.IsValid())
+	{
+		SessionSearch->bIsLanQuery = true;
+		UE_LOG(LogTemp, Warning, TEXT("Starting to find sessions"));
+		SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+	}
+}
+
 void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
 {
-		if (Success && SessionSearch.IsValid())
+		if (Success && SessionSearch.IsValid() && Menu != nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Finished finding sessions"));
+
+			TArray<FString> ServerNames;
 			for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Found sessions: %s"), *SearchResult.GetSessionIdStr());
+				ServerNames.Add(SearchResult.GetSessionIdStr());
 			}
+
+			Menu->SetServerList(ServerNames);
 		}
 }
 
@@ -153,11 +161,28 @@ void UFPSPlaygroundGameInstance::CreateSession()
 	}
 }
 
-void UFPSPlaygroundGameInstance::Join(const FString& Address)
+void UFPSPlaygroundGameInstance::Join(uint32 Index)
 {
+	if (!SessionInterface.IsValid()) return;
+	if (!SessionSearch.IsValid()) return;
+
 	if (Menu != nullptr)
 	{
 		Menu->Teardown();
+	}
+
+	SessionInterface->JoinSession(0, SESSION_NAME, SessionSearch->SearchResults[Index]);
+}
+
+void UFPSPlaygroundGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!SessionInterface.IsValid()) return;
+
+	FString Address;
+	if (!SessionInterface->GetResolvedConnectString(SessionName, Address))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Could not get connect string"));
+		return;
 	}
 
 	UEngine* Engine = GetEngine();

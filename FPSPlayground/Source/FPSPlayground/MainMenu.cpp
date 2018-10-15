@@ -4,6 +4,7 @@
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
+#include "Components/TextBlock.h"
 #include "UObject/ConstructorHelpers.h"
 #include "ServerList.h"
 
@@ -46,20 +47,42 @@ void UMainMenu::HostServer()
 	}
 }
 
-void UMainMenu::JoinServer()
+void UMainMenu::SetServerList(TArray<FString> ServerNames)
 {
-	if (MenuInterface != nullptr)
-	{
-		/*if (!ensure(IPAddressField != nullptr)) return;
-		const FString& IPAddress = IPAddressField->GetText().ToString();
-		MenuInterface->Join(IPAddress);*/
-		UWorld* World = this->GetWorld();
-		if (!ensure(World != nullptr)) return;
+	UWorld* World = this->GetWorld();
+	if (!ensure(World != nullptr)) return;
 
+	ServerList->ClearChildren();
+
+	uint32 i = 0;
+	for (const FString& ServerName : ServerNames)
+	{
 		UServerList* List = CreateWidget<UServerList>(World, ServerListClass);
 		if (!ensure(List != nullptr)) return;
 
+		List->ServerName->SetText(FText::FromString(ServerName));
+		List->Setup(this, i);
+		++i;
+
 		ServerList->AddChild(List);
+	}
+}
+
+void UMainMenu::SelectIndex(uint32 Index)
+{
+	SelectedIndex = Index;
+}
+
+void UMainMenu::JoinServer()
+{
+	if (SelectedIndex.IsSet() && MenuInterface != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Selected index %d"), SelectedIndex.GetValue());
+		MenuInterface->Join(SelectedIndex.GetValue());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Selected index not set"));
 	}
 }
 
@@ -87,4 +110,9 @@ void UMainMenu::OpenJoinMenu()
 	if (!ensure(MenuSwitcher != nullptr)) return;
 	if (!ensure(JoinMenu != nullptr)) return;
 	MenuSwitcher->SetActiveWidget(JoinMenu);
+
+	if (MenuInterface != nullptr)
+	{
+		MenuInterface->RefreshServerList();
+	}
 }
