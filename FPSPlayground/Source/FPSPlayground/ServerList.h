@@ -19,8 +19,11 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ServerName;
 
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	class UButton* ListButton;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* HostUsername;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* PlayerCount;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool Selected = false;
@@ -28,6 +31,9 @@ public:
 	void Setup(class UMainMenu* InParent, uint32 InIndex);
 
 private:
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* ListButton;
 
 	UPROPERTY()
 	class UMainMenu* Parent;

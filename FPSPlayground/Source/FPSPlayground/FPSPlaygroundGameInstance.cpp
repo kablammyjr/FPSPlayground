@@ -131,16 +131,16 @@ void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Finished finding sessions"));
 
-			TArray<FString> ServerNames;
-			ServerNames.Add("Test Server1");
-			ServerNames.Add("Test Server2");
-			ServerNames.Add("Test Server3");
-			ServerNames.Add("Test Server4");
-			ServerNames.Add("Test Server5");
+			TArray<FServerData> ServerNames;
 			for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Found sessions: %s"), *SearchResult.GetSessionIdStr());
-				ServerNames.Add(SearchResult.GetSessionIdStr());
+				FServerData Data;
+				Data.Name = SearchResult.GetSessionIdStr();
+				Data.MaxPlayers = SearchResult.Session.SessionSettings.NumPublicConnections;
+				Data.Currentplayers = Data.MaxPlayers - SearchResult.Session.NumOpenPublicConnections;
+				Data.HostUsername = SearchResult.Session.OwningUserName;
+				ServerNames.Add(Data);
 			}
 
 			Menu->SetServerList(ServerNames);
@@ -160,7 +160,15 @@ void UFPSPlaygroundGameInstance::CreateSession()
 	if (SessionInterface.IsValid())
 	{
 		FOnlineSessionSettings SessionSettings;
-		SessionSettings.bIsLANMatch = false;
+		if (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+		{
+			SessionSettings.bIsLANMatch = true;
+		}
+		else
+		{
+			SessionSettings.bIsLANMatch = false;
+		}
+
 		SessionSettings.NumPublicConnections = 2;
 		SessionSettings.bShouldAdvertise = true;
 		SessionSettings.bUsesPresence = true;
