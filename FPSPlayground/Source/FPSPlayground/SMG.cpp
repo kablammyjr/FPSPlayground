@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 #include "FPSPlaygroundCharacter.h"
 
 
@@ -29,10 +30,53 @@ ASMG::ASMG()
 	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
 }
 
+FString GetEnumTextSMG(ENetRole Role)
+{
+	switch (Role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	default:
+		return "ERROR";
+	}
+}
+
 // Called when the game starts or when spawned
 void ASMG::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Warning, TEXT("Begin"));
+
+	UWorld* World = GetWorld();
+	if (!ensure(World != nullptr)) return;
+	
+	APlayerController* PlayerController = World->GetFirstLocalPlayerFromController()->GetPlayerController(World);
+	if (!ensure(PlayerController != nullptr)) return;
+	
+	if (PlayerController != nullptr)
+	{
+		this->SetOwner(PlayerController);
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("GetOwner: %s"), *this->GetOwner()->GetName());
+
+	if (GetNetOwningPlayer() != nullptr)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("GetNetOwningPlayer: %s"), *GetNetOwningPlayer()->GetName());
+	}
+
+	if (HasAuthority())
+	{
+		SetReplicates(true);
+		SetReplicateMovement(true);
+	}
 }
 
 // Called every frame
@@ -40,7 +84,13 @@ void ASMG::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumTextSMG(Role), this, FColor::White, DeltaTime);
 }
+
+//bool ASMG::Server_OnFire_Validate()
+//{
+//	return true;
+//}
 
 void ASMG::OnFire()
 {
@@ -102,12 +152,10 @@ void ASMG::OnFire()
 							BulletRotation = FRotator(FMath::RandRange(-6.0f, 6.0f), FMath::RandRange(-6.0f, 6.0f), 0.0f);
 						}
 					}
-					
+
 					//const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 					//const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation());
-
-					RecoilEvent();
 
 					const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
 
@@ -116,12 +164,14 @@ void ASMG::OnFire()
 					//Set Spawn Collision Handling Override
 					FActorSpawnParameters ActorSpawnParams;
 					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-					
+
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-					
+
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::OnContinuousFire, FireRate, false);
+
+					//Server_OnFire();
 				}
 			}
 		}
@@ -132,6 +182,39 @@ void ASMG::OnFire()
 		}
 	}
 }
+
+//void ASMG::Server_OnFire_Implementation()
+//{	
+//	UWorld* const World = GetWorld();
+//	if (World != NULL)
+//	{
+//
+//		UE_LOG(LogTemp, Warning, TEXT("Server_OnFire"));
+//		//Set Spawn Collision Handling Override
+//		FActorSpawnParameters ActorSpawnParams;
+//		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+//
+//		const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
+//
+//		const FVector SpawnLocation = FMuzzleWorldLocation;
+//
+//		// spawn the projectile at the muzzle
+//		World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+//
+//		RecoilEvent();
+//
+//		// try and play the sound if specified
+//		if (FireSound != NULL)
+//		{
+//			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+//		}
+//	}
+//}
+
+//bool ASMG::Server_OnContinuousFire_Validate()
+//{
+//	return true;
+//}
 
 void ASMG::OnContinuousFire()
 {
@@ -145,7 +228,7 @@ void ASMG::OnContinuousFire()
 			if (World != NULL)
 			{
 				if (bIsFiring)
-				{			
+				{
 					if (bIsCrouched)
 					{
 						if (bIsADS)
@@ -186,7 +269,7 @@ void ASMG::OnContinuousFire()
 					{
 						BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
 					}
-					
+
 					//const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation() + BulletRotation;
 					// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 					//const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation());
@@ -199,10 +282,10 @@ void ASMG::OnContinuousFire()
 					FActorSpawnParameters ActorSpawnParams;
 					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-					RecoilEvent();
-
 					// spawn the projectile at the muzzle
 					World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+
+					//Server_OnContinuousFire();
 
 					if (bIsFiring)
 					{
@@ -220,6 +303,32 @@ void ASMG::OnContinuousFire()
 		}
 	}
 }
+
+//void ASMG::Server_OnContinuousFire_Implementation()
+//{
+//	UWorld* const World = GetWorld();
+//	if (World != NULL)
+//	{
+//		const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
+//
+//		const FVector SpawnLocation = FMuzzleWorldLocation;
+//
+//		//Set Spawn Collision Handling Override
+//		FActorSpawnParameters ActorSpawnParams;
+//		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+//
+//		// spawn the projectile at the muzzle
+//		World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+//									
+//		RecoilEvent();
+//
+//		// try and play the sound if specified
+//		if (FireSound != NULL)
+//		{
+//			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+//		}
+//	}
+//}
 
 void ASMG::OnRelease()
 {

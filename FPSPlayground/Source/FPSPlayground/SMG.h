@@ -34,12 +34,22 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	//Fires SMG Projectile
 	UFUNCTION(BlueprintCallable)
 	void OnFire();
 
+	//Fires SMG Projectile
+	/*UFUNCTION(Server, Reliable, WithValidation)
+	void Server_OnFire();
+	void Server_OnFire_Implementation();
+	bool Server_OnFire_Validate();*/
+
 	UFUNCTION(BlueprintCallable)
 	void OnContinuousFire();
+
+	//UFUNCTION(Server, Reliable, WithValidation)
+	/*void Server_OnContinuousFire();
+	void Server_OnContinuousFire_Implementation();
+	bool Server_OnContinuousFire_Validate();*/
 
 	void OnRelease();
 
@@ -81,7 +91,7 @@ private:
 	bool bIsFiring = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
-	TSubclassOf<class ACharacter> FPSCharacter;
+	class AFPSPlaygroundCharacter* FPSCharacter;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
 	TSubclassOf<class ASMG> SMGBlueprint;

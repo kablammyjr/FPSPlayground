@@ -28,6 +28,8 @@ class AFPSPlaygroundCharacter : public ACharacter
 public:
 	AFPSPlaygroundCharacter();
 
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 	virtual void BeginPlay();
 
@@ -79,9 +81,15 @@ public:
 
 protected:
 
-	void PullTrigger();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_PullTrigger();
+	void Server_PullTrigger_Implementation();
+	bool Server_PullTrigger_Validate();
 
-	void ReleaseTrigger();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ReleaseTrigger();
+	void Server_ReleaseTrigger_Implementation();
+	bool Server_ReleaseTrigger_Validate();
 
 	void StartCrouch();
 	void StopCrouch();

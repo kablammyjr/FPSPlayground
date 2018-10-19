@@ -45,6 +45,34 @@ void AFPSPlaygroundCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
+	UWorld* World = GetWorld();
+	if (!ensure(World != nullptr)) return;
+
+	APlayerController* PlayerController = World->GetFirstLocalPlayerFromController()->GetPlayerController(World);
+	if (!ensure(PlayerController != nullptr)) return;
+
+	if (PlayerController != nullptr)
+	{
+		this->SetOwner(PlayerController);
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("GetOwner: %s"), *this->GetOwner()->GetName());
+
+	if (GetNetOwningPlayer() != nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetNetOwningPlayer: %s"), *GetNetOwningPlayer()->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No GetNetOwningPlayer"));
+	}
+
+	if (HasAuthority())
+	{
+		SetReplicates(true);
+		SetReplicateMovement(true);
+	}
+
 	if (SMGBlueprint == nullptr) {
 		UE_LOG(LogTemp, Warning, TEXT("Gun blueprint missing."));
 		return;
@@ -54,6 +82,31 @@ void AFPSPlaygroundCharacter::BeginPlay()
 
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+}
+
+FString GetEnumText(ENetRole Role)
+{
+	switch (Role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	default:
+		return "ERROR";
+	}
+}
+
+void AFPSPlaygroundCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::Red, DeltaTime);
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -72,8 +125,8 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSPlaygroundCharacter::StopCrouch);
 
 	// Bind fire event
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseTrigger);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::Server_PullTrigger);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::Server_ReleaseTrigger);
 
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
@@ -113,7 +166,7 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 			{
 				OnSprint();
 				bCanFireGun = false;
-				ReleaseTrigger();
+				Server_ReleaseTrigger();
 			}
 
 			bIsWalkingForward = true;
@@ -152,12 +205,18 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-void AFPSPlaygroundCharacter::PullTrigger()
+bool AFPSPlaygroundCharacter::Server_PullTrigger_Validate()
 {
+	return true;
+}
+
+void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Pull trigger"));
 	if (bIsSprinting)
 	{
 		StopSprint();
-		PullTrigger();
+		Server_PullTrigger();
 	}
 
 	if (bCanFireGun)
@@ -167,7 +226,12 @@ void AFPSPlaygroundCharacter::PullTrigger()
 	}
 }
 
-void AFPSPlaygroundCharacter::ReleaseTrigger()
+bool AFPSPlaygroundCharacter::Server_ReleaseTrigger_Validate()
+{
+	return true;
+}
+
+void AFPSPlaygroundCharacter::Server_ReleaseTrigger_Implementation()
 {
 	SMG->OnRelease();
 	bIsFiring = false;

@@ -35,12 +35,20 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
+
+	this->SetActorHiddenInGame(false);
 }
 
 // Called when the game starts or when spawned
 void AFPSPlaygroundProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		SetReplicates(true);
+		SetReplicateMovement(true);
+	}
 
 	FTimerHandle FuzeTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundProjectile::MakeVisible, TimeUntilVisible, false);
