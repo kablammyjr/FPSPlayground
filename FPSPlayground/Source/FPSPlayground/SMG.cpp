@@ -19,6 +19,7 @@ ASMG::ASMG()
 	FP_Gun->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
 	FP_Gun->bCastDynamicShadow = false;
 	FP_Gun->CastShadow = false;
+	FP_Gun->SetVisibility(true);
 	// FP_Gun->SetupAttachment(Mesh1P, TEXT("GripPoint"));
 
 	RootComponent = FP_Gun;

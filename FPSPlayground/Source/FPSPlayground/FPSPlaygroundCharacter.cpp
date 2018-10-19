@@ -19,6 +19,7 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+	RootComponent = GetCapsuleComponent();
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -38,6 +39,24 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
+
+	GunMesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh1P"));
+	GunMesh1P->bOnlyOwnerSee = true;
+	GunMesh1P->bCastDynamicShadow = false;
+	GunMesh1P->CastShadow = false;
+	GunMesh1P->SetupAttachment(Mesh1P);
+
+	Mesh3P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh3P"));
+	Mesh3P->bOwnerNoSee = true;
+	Mesh3P->bCastDynamicShadow = false;
+	Mesh3P->CastShadow = false;
+	Mesh3P->SetupAttachment(GetCapsuleComponent());
+
+	GunMesh3P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh3P"));
+	GunMesh3P->bOwnerNoSee = true;
+	GunMesh3P->bCastDynamicShadow = false;
+	GunMesh3P->CastShadow = false;
+	GunMesh3P->SetupAttachment(Mesh3P);
 }
 
 void AFPSPlaygroundCharacter::BeginPlay()
@@ -82,6 +101,8 @@ void AFPSPlaygroundCharacter::BeginPlay()
 
 	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 }
 
 FString GetEnumText(ENetRole Role)
@@ -279,6 +300,7 @@ void AFPSPlaygroundCharacter::ReleaseADS()
 void AFPSPlaygroundCharacter::StartCrouch()
 {
 	Crouch();
+
 	bIsSprinting = false;
 	StopSprint();
 	bCanFireGun = true;
