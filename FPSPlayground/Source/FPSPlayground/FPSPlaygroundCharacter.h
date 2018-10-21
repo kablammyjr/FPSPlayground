@@ -32,6 +32,13 @@ class AFPSPlaygroundCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
 
+	UPROPERTY(VisibleDefaultsOnly)
+	class USceneComponent* MuzzleLocation;
+
+	/** Projectile class to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	TSubclassOf<class AFPSPlaygroundProjectile> ProjectileClass;
+
 	class UCharacterMovementComponent* CharacterMovementComponent;
 
 public:
@@ -153,5 +160,8 @@ private:
 	bool bCanFireGun = true;
 
 	bool bOnSprint = false;
+
+	FRotator SpawnRotation;
+	FVector SpawnLocation;
 };
 

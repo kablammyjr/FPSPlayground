@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "SMG.h"
+#include "FPSPlaygroundProjectile.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -57,6 +58,10 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	GunMesh3P->bCastDynamicShadow = false;
 	GunMesh3P->CastShadow = false;
 	GunMesh3P->SetupAttachment(Mesh3P);
+
+	MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
+	MuzzleLocation->SetVisibility(false);
+	MuzzleLocation->SetupAttachment(FirstPersonCameraComponent);
 }
 
 void AFPSPlaygroundCharacter::BeginPlay()
@@ -242,7 +247,17 @@ void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
 
 	if (bCanFireGun)
 	{
-		SMG->OnFire();
+		SpawnRotation = MuzzleLocation->GetComponentRotation();
+
+		SpawnLocation = MuzzleLocation->GetComponentLocation();
+
+		//Set Spawn Collision Handling Override
+		FActorSpawnParameters ActorSpawnParams;
+		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+		// spawn the projectile at the muzzle
+		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+		
 		bIsFiring = true;
 	}
 }
