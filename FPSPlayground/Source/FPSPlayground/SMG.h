@@ -26,40 +26,34 @@ public:
 	// Sets default values for this actor's properties
 	ASMG();
 
+	UFUNCTION(BlueprintCallable)
+	void IsMoving(bool IsMoving);
+
+	UFUNCTION(BlueprintCallable)
+	void IsADS(bool ADSStatus);
+
+	UFUNCTION(BlueprintCallable)
+	void IsCrouched(bool CrouchStatus);
+
+	void OnRelease();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
 	void OnFire();
 
-	//Fires SMG Projectile
-	/*UFUNCTION(Server, Reliable, WithValidation)
-	void Server_OnFire();
-	void Server_OnFire_Implementation();
-	bool Server_OnFire_Validate();*/
-
 	UFUNCTION(BlueprintCallable)
 	void OnContinuousFire();
-
-	//UFUNCTION(Server, Reliable, WithValidation)
-	/*void Server_OnContinuousFire();
-	void Server_OnContinuousFire_Implementation();
-	bool Server_OnContinuousFire_Validate();*/
-
-	void OnRelease();
 
 	void CanShoot();
 
 	UFUNCTION(Category = "Animation", BlueprintImplementableEvent)
 	void RecoilEvent();
-
-	UFUNCTION(BlueprintCallable)
-	void IsMoving(bool IsMoving);
 
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
@@ -70,13 +64,8 @@ public:
 	class USoundBase* FireSound;
 
 	UFUNCTION(BlueprintCallable)
-	void IsADS(bool ADSStatus);
-
-	UFUNCTION(BlueprintCallable)
-	void IsCrouched(bool CrouchStatus);
-
-	UFUNCTION(BlueprintCallable)
 	void MuzzleWorldLocationRotation(FVector MuzzleWorldLocation, FRotator MuzzleWorldRotation);
+
 
 private:
 

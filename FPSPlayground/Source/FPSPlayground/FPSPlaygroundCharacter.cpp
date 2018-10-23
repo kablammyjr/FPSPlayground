@@ -91,12 +91,6 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		UE_LOG(LogTemp, Error, TEXT("No GetNetOwningPlayer"));
 	}
 
-	if (HasAuthority())
-	{
-		SetReplicates(true);
-		SetReplicateMovement(true);
-	}
-
 	if (SMGBlueprint == nullptr) {
 		UE_LOG(LogTemp, Warning, TEXT("Gun blueprint missing."));
 		return;
@@ -132,7 +126,6 @@ void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::Red, DeltaTime);
-
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -151,7 +144,7 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSPlaygroundCharacter::StopCrouch);
 
 	// Bind fire event
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::Server_PullTrigger);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::Server_ReleaseTrigger);
 
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
@@ -231,23 +224,37 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-bool AFPSPlaygroundCharacter::Server_PullTrigger_Validate()
+//bool AFPSPlaygroundCharacter::Server_PullTrigger_Validate()
+//{
+//	return true;
+//}
+//
+//void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
+//{
+//	
+//}
+
+void AFPSPlaygroundCharacter::PullTrigger()
+{
+	Server_OnFireSMG(FirstPersonCameraComponent->GetComponentRotation());
+}
+
+bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
+void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRotation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Pull trigger"));
 	if (bIsSprinting)
 	{
 		StopSprint();
-		Server_PullTrigger();
+		PullTrigger();
 	}
 
 	if (bCanFireGun)
 	{
-		SpawnRotation = MuzzleLocation->GetComponentRotation();
+		SpawnRotation = MuzzleRotation;
 
 		SpawnLocation = MuzzleLocation->GetComponentLocation();
 
@@ -257,7 +264,7 @@ void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
 
 		// spawn the projectile at the muzzle
 		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-		
+
 		bIsFiring = true;
 	}
 }
@@ -269,6 +276,7 @@ bool AFPSPlaygroundCharacter::Server_ReleaseTrigger_Validate()
 
 void AFPSPlaygroundCharacter::Server_ReleaseTrigger_Implementation()
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *FirstPersonCameraComponent->GetComponentRotation().ToString());
 	SMG->OnRelease();
 	bIsFiring = false;
 }

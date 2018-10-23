@@ -32,9 +32,6 @@ class AFPSPlaygroundCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
 
-	UPROPERTY(VisibleDefaultsOnly)
-	class USceneComponent* MuzzleLocation;
-
 	/** Projectile class to spawn */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AFPSPlaygroundProjectile> ProjectileClass;
@@ -68,6 +65,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class UAnimMontage* FireAnimation;
 
+	UPROPERTY(BlueprintReadOnly)
+	class USceneComponent* MuzzleLocation;
+
 	UFUNCTION(BlueprintCallable)
 	void PlayRecoilAnimation();
 
@@ -97,15 +97,20 @@ public:
 
 protected:
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_PullTrigger();
-	void Server_PullTrigger_Implementation();
-	bool Server_PullTrigger_Validate();
+	UFUNCTION()
+	void PullTrigger();
+	/*void Server_PullTrigger_Implementation();
+	bool Server_PullTrigger_Validate();*/
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_ReleaseTrigger();
 	void Server_ReleaseTrigger_Implementation();
 	bool Server_ReleaseTrigger_Validate();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_OnFireSMG(FRotator MuzzleRotation);
+	void Server_OnFireSMG_Implementation(FRotator MuzzleRotation);
+	bool Server_OnFireSMG_Validate(FRotator MuzzleRotation);
 
 	void StartCrouch();
 	void StopCrouch();
@@ -161,6 +166,7 @@ private:
 
 	bool bOnSprint = false;
 
+	FRotator BulletRotation;
 	FRotator SpawnRotation;
 	FVector SpawnLocation;
 };

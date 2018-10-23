@@ -72,12 +72,6 @@ void ASMG::BeginPlay()
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("GetNetOwningPlayer: %s"), *GetNetOwningPlayer()->GetName());
 	}
-
-	if (HasAuthority())
-	{
-		SetReplicates(true);
-		SetReplicateMovement(true);
-	}
 }
 
 // Called every frame
@@ -87,11 +81,6 @@ void ASMG::Tick(float DeltaTime)
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumTextSMG(Role), this, FColor::White, DeltaTime);
 }
-
-//bool ASMG::Server_OnFire_Validate()
-//{
-//	return true;
-//}
 
 void ASMG::OnFire()
 {
@@ -184,39 +173,6 @@ void ASMG::OnFire()
 	}
 }
 
-//void ASMG::Server_OnFire_Implementation()
-//{	
-//	UWorld* const World = GetWorld();
-//	if (World != NULL)
-//	{
-//
-//		UE_LOG(LogTemp, Warning, TEXT("Server_OnFire"));
-//		//Set Spawn Collision Handling Override
-//		FActorSpawnParameters ActorSpawnParams;
-//		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-//
-//		const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
-//
-//		const FVector SpawnLocation = FMuzzleWorldLocation;
-//
-//		// spawn the projectile at the muzzle
-//		World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-//
-//		RecoilEvent();
-//
-//		// try and play the sound if specified
-//		if (FireSound != NULL)
-//		{
-//			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-//		}
-//	}
-//}
-
-//bool ASMG::Server_OnContinuousFire_Validate()
-//{
-//	return true;
-//}
-
 void ASMG::OnContinuousFire()
 {
 	if (bIsFiring)
@@ -304,32 +260,6 @@ void ASMG::OnContinuousFire()
 		}
 	}
 }
-
-//void ASMG::Server_OnContinuousFire_Implementation()
-//{
-//	UWorld* const World = GetWorld();
-//	if (World != NULL)
-//	{
-//		const FRotator SpawnRotation = FMuzzleWorldRotation + BulletRotation;
-//
-//		const FVector SpawnLocation = FMuzzleWorldLocation;
-//
-//		//Set Spawn Collision Handling Override
-//		FActorSpawnParameters ActorSpawnParams;
-//		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-//
-//		// spawn the projectile at the muzzle
-//		World->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-//									
-//		RecoilEvent();
-//
-//		// try and play the sound if specified
-//		if (FireSound != NULL)
-//		{
-//			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-//		}
-//	}
-//}
 
 void ASMG::OnRelease()
 {
