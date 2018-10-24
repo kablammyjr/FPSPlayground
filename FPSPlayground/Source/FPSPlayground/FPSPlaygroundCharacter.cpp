@@ -9,7 +9,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "UnrealNetwork.h"
-#include "SMG.h"
 #include "FPSPlaygroundProjectile.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -98,11 +97,6 @@ void AFPSPlaygroundCharacter::BeginPlay()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("No GetNetOwningPlayer"));
-	}
-
-	if (SMGBlueprint == nullptr) {
-		UE_LOG(LogTemp, Warning, TEXT("Gun blueprint missing."));
-		return;
 	}
 
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
