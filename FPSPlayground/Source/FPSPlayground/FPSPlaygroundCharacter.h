@@ -93,6 +93,10 @@ public:
 	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
 	void SetStopSprint();
 
+	UFUNCTION(BlueprintCallable)
+	FRotator GetFPSCameraRotation();
+	
+
 	bool bIsADS = false;
 
 protected:
@@ -108,9 +112,9 @@ protected:
 	bool Server_ReleaseTrigger_Validate();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_OnFireSMG(FRotator MuzzleRotation);
-	void Server_OnFireSMG_Implementation(FRotator MuzzleRotation);
-	bool Server_OnFireSMG_Validate(FRotator MuzzleRotation);
+	void Server_OnFireSMG(FRotator CameraRotation);
+	void Server_OnFireSMG_Implementation(FRotator CameraRotation);
+	bool Server_OnFireSMG_Validate(FRotator CameraRotation);
 
 	void StartCrouch();
 	void StopCrouch();
@@ -169,5 +173,7 @@ private:
 	FRotator BulletRotation;
 	FRotator SpawnRotation;
 	FVector SpawnLocation;
+
+	FRotator FPSCameraRotation;
 };
 

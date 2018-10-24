@@ -60,7 +60,6 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	GunMesh3P->SetupAttachment(Mesh3P);
 
 	MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
-	MuzzleLocation->SetVisibility(false);
 	MuzzleLocation->SetupAttachment(FirstPersonCameraComponent);
 }
 
@@ -126,6 +125,11 @@ void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::Red, DeltaTime);
+
+	if (FirstPersonCameraComponent != nullptr)
+	{
+		FPSCameraRotation = MuzzleLocation->GetComponentRotation();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -236,15 +240,15 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 
 void AFPSPlaygroundCharacter::PullTrigger()
 {
-	Server_OnFireSMG(FirstPersonCameraComponent->GetComponentRotation());
+	Server_OnFireSMG(FPSCameraRotation);
 }
 
-bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation)
+bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRotation)
+void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation)
 {
 	if (bIsSprinting)
 	{
@@ -254,7 +258,7 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRot
 
 	if (bCanFireGun)
 	{
-		SpawnRotation = MuzzleRotation;
+		SpawnRotation = CameraRotation;
 
 		SpawnLocation = MuzzleLocation->GetComponentLocation();
 
@@ -389,4 +393,9 @@ void AFPSPlaygroundCharacter::StopSprint()
 bool AFPSPlaygroundCharacter::GetCanFireGun()
 {
 	return bCanFireGun;
+}
+
+FRotator AFPSPlaygroundCharacter::GetFPSCameraRotation()
+{
+	return FPSCameraRotation;
 }
