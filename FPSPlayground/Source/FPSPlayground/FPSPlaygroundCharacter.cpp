@@ -8,6 +8,7 @@
 #include "GameFramework/InputSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
+#include "UnrealNetwork.h"
 #include "SMG.h"
 #include "FPSPlaygroundProjectile.h"
 
@@ -16,8 +17,17 @@ DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 //////////////////////////////////////////////////////////////////////////
 // AFPSPlaygroundCharacter
 
+void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(AFPSPlaygroundCharacter, FPSCameraRotationRep);
+}
+
 AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 {
+	bReplicates = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 	RootComponent = GetCapsuleComponent();
@@ -95,10 +105,6 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		return;
 	}
 
-	SMG = GetWorld()->SpawnActor<ASMG>(SMGBlueprint);
-
-	//Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
-	SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 }
@@ -125,11 +131,6 @@ void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::Red, DeltaTime);
-
-	if (FirstPersonCameraComponent != nullptr)
-	{
-		FPSCameraRotation = MuzzleLocation->GetComponentRotation();
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -149,7 +150,7 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
-	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::Server_ReleaseTrigger);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseTrigger);
 
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
@@ -188,8 +189,8 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 			if (bOnSprint)
 			{
 				OnSprint();
-				bCanFireGun = false;
-				Server_ReleaseTrigger();
+				bCanShoot = false;
+				ReleaseTrigger();
 			}
 
 			bIsWalkingForward = true;
@@ -200,7 +201,7 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 		if (bIsSprinting)
 		{
 			SetStopSprint();
-			bCanFireGun = true;
+			bCanShoot = true;
 		}
 
 		bIsWalkingForward = false;
@@ -228,19 +229,15 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
-//bool AFPSPlaygroundCharacter::Server_PullTrigger_Validate()
-//{
-//	return true;
-//}
-//
-//void AFPSPlaygroundCharacter::Server_PullTrigger_Implementation()
-//{
-//	
-//}
-
 void AFPSPlaygroundCharacter::PullTrigger()
 {
-	Server_OnFireSMG(FPSCameraRotation);
+	Server_OnFireSMG(this->GetControlRotation());
+}
+
+void AFPSPlaygroundCharacter::ReleaseTrigger()
+{
+	bIsFiring = false;
+	Server_StopFireSMG();
 }
 
 bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation)
@@ -250,39 +247,238 @@ bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation)
 
 void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation)
 {
-	if (bIsSprinting)
+	if (bCanShoot)
 	{
-		StopSprint();
-		PullTrigger();
-	}
-
-	if (bCanFireGun)
-	{
-		SpawnRotation = CameraRotation;
-
-		SpawnLocation = MuzzleLocation->GetComponentLocation();
-
-		//Set Spawn Collision Handling Override
-		FActorSpawnParameters ActorSpawnParams;
-		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-		// spawn the projectile at the muzzle
-		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-
 		bIsFiring = true;
+		// try and fire a projectile
+		if (ProjectileClass != NULL)
+		{
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				if (bIsFiring)
+				{
+					if (bIsCrouched)
+					{
+						if (bIsADS)
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-0.5f, 0.5f), FMath::RandRange(-0.5f, 0.5f), 0.0f);
+							}
+						}
+						else
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.5f, 2.5f), FMath::RandRange(-2.5f, 2.5f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.5f, 1.5f), FMath::RandRange(-1.5f, 1.5f), 0.0f);
+							}
+						}
+					}
+					else if (bIsADS)
+					{
+						if (bIsMoving)
+						{
+							BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+						}
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-3.0f, 3.0f), FMath::RandRange(-3.0f, 3.0f), 0.0f);
+						}
+					}
+					else
+					{
+						if (bIsMoving)
+						{
+							BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+						}
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-6.0f, 6.0f), FMath::RandRange(-6.0f, 6.0f), 0.0f);
+						}
+					}
+
+					SpawnRotation = CameraRotation;
+					SpawnLocation = MuzzleLocation->GetComponentLocation();
+
+					//Set Spawn Collision Handling Override
+					FActorSpawnParameters ActorSpawnParams;
+					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+					// spawn the projectile at the muzzle
+					GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+
+					if (bIsFiring)
+					{
+						bCanShoot = false;
+						OnContinuousFireSMG();
+					}
+					else { return;  }
+				}
+			}
+		}
+		// try and play the sound if specified
+		if (FireSound != NULL)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+		
+		if (FireAnimation != nullptr)
+		{
+			// Get the animation object for the arms mesh
+			UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+			if (AnimInstance != nullptr)
+			{
+				if (bCanRecoil)
+				{
+					AnimInstance->Montage_Play(FireAnimation, 1.f);
+
+					bCanRecoil = false;
+
+					FTimerHandle FuzeTimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
+				}
+			}
+		}
 	}
 }
 
-bool AFPSPlaygroundCharacter::Server_ReleaseTrigger_Validate()
+void AFPSPlaygroundCharacter::OnContinuousFireSMG()
+{
+	if (bCanShoot)
+	{
+		Server_OnContinuousFireSMG(this->GetControlRotation());
+	}
+	else
+	{
+		FTimerHandle FuzeTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanShoot, FireRate, false);
+	}
+}
+
+bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator CameraRotation)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_ReleaseTrigger_Implementation()
+void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *FirstPersonCameraComponent->GetComponentRotation().ToString());
-	SMG->OnRelease();
+	if (bIsFiring)
+	{
+		bIsFiring = true;
+		// try and fire a projectile
+		if (ProjectileClass != NULL)
+		{
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				if (bIsFiring)
+				{
+					if (bIsCrouched)
+					{
+						if (bIsADS)
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.0f, 2.0f), FMath::RandRange(-2.0f, 2.0f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+							}
+						}
+						else
+						{
+							if (bIsMoving)
+							{
+								BulletRotation = FRotator(FMath::RandRange(-3.5f, 3.5f), FMath::RandRange(-3.5f, 3.5f), 0.0f);
+							}
+							else
+							{
+								BulletRotation = FRotator(FMath::RandRange(-2.5f, 2.5f), FMath::RandRange(-2.5f, 2.5f), 0.0f);
+							}
+						}
+					}
+					else if (bIsADS)
+					{
+						if (bIsMoving)
+						{
+							BulletRotation = FRotator(FMath::RandRange(-5.0f, 5.0f), FMath::RandRange(-5.0f, 5.0f), 0.0f);
+						}
+						else
+						{
+							BulletRotation = FRotator(FMath::RandRange(-4.0f, 4.0f), FMath::RandRange(-4.0f, 4.0f), 0.0f);
+						}
+					}
+					else
+					{
+						BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
+					}
+
+					SpawnRotation = CameraRotation;
+					SpawnLocation = MuzzleLocation->GetComponentLocation();
+
+					//Set Spawn Collision Handling Override
+					FActorSpawnParameters ActorSpawnParams;
+					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+					// spawn the projectile at the muzzle
+					GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+
+					if (bIsFiring)
+					{
+						bCanShoot = false;
+						OnContinuousFireSMG();
+					}
+					else { return; }
+				}
+			}
+		}
+		// try and play the sound if specified
+		if (FireSound != NULL)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+
+		if (FireAnimation != nullptr)
+		{
+			// Get the animation object for the arms mesh
+			UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+			if (AnimInstance != nullptr)
+			{
+				if (bCanRecoil)
+				{
+					AnimInstance->Montage_Play(FireAnimation, 1.f);
+
+					bCanRecoil = false;
+
+					FTimerHandle FuzeTimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
+				}
+			}
+		}
+	}
+}
+
+bool AFPSPlaygroundCharacter::Server_StopFireSMG_Validate()
+{
+	return true;
+}
+
+void AFPSPlaygroundCharacter::Server_StopFireSMG_Implementation()
+{
+	bCanShoot = false;
 	bIsFiring = false;
+
+	CanShoot();
 }
 
 bool AFPSPlaygroundCharacter::GetIsFiring()
@@ -330,7 +526,7 @@ void AFPSPlaygroundCharacter::StartCrouch()
 
 	bIsSprinting = false;
 	StopSprint();
-	bCanFireGun = true;
+	bCanShoot = true;
 }
 
 void AFPSPlaygroundCharacter::StopCrouch()
@@ -368,7 +564,7 @@ void AFPSPlaygroundCharacter::OnSprint()
 		{
 			SetOnSprint();
 			bIsSprinting = true;
-			bCanFireGun = false;
+			bCanShoot = false;
 
 			if (MoveForwardAxis <= 0.0f)
 			{
@@ -386,16 +582,22 @@ void AFPSPlaygroundCharacter::StopSprint()
 	if (bIsSprinting)
 	{
 		bIsSprinting = false;
-		bCanFireGun = true;
+		bCanShoot = true;
 	}
 }
 
 bool AFPSPlaygroundCharacter::GetCanFireGun()
 {
-	return bCanFireGun;
+	return bCanShoot;
 }
 
-FRotator AFPSPlaygroundCharacter::GetFPSCameraRotation()
+void AFPSPlaygroundCharacter::GetIsMoving(bool IsMoving)
 {
-	return FPSCameraRotation;
+	bIsMoving = IsMoving;
+}
+
+void AFPSPlaygroundCharacter::CanShoot()
+{
+	bCanShoot = true;
+	OnContinuousFireSMG();
 }

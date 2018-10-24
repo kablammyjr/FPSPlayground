@@ -41,6 +41,8 @@ class AFPSPlaygroundCharacter : public ACharacter
 public:
 	AFPSPlaygroundCharacter();
 
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const;
+
 	virtual void Tick(float DeltaTime) override;
 
 protected:
@@ -93,28 +95,33 @@ public:
 	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
 	void SetStopSprint();
 
-	UFUNCTION(BlueprintCallable)
-	FRotator GetFPSCameraRotation();
-	
-
 	bool bIsADS = false;
-
-protected:
-
-	UFUNCTION()
-	void PullTrigger();
-	/*void Server_PullTrigger_Implementation();
-	bool Server_PullTrigger_Validate();*/
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_ReleaseTrigger();
-	void Server_ReleaseTrigger_Implementation();
-	bool Server_ReleaseTrigger_Validate();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_OnFireSMG(FRotator CameraRotation);
 	void Server_OnFireSMG_Implementation(FRotator CameraRotation);
 	bool Server_OnFireSMG_Validate(FRotator CameraRotation);
+
+	UFUNCTION()
+	void OnContinuousFireSMG();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_OnContinuousFireSMG(FRotator CameraRotation);
+	void Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation);
+	bool Server_OnContinuousFireSMG_Validate(FRotator CameraRotation);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_StopFireSMG();
+	void Server_StopFireSMG_Implementation();
+	bool Server_StopFireSMG_Validate();
+
+protected:
+
+	UFUNCTION()
+	void PullTrigger();
+
+	UFUNCTION()
+	void ReleaseTrigger();
 
 	void StartCrouch();
 	void StopCrouch();
@@ -156,24 +163,36 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Setup, meta = (AllowPrivateAccess = "true"))
 	ASMG* SMG;
 
+	UFUNCTION(BlueprintCallable)
+	void GetIsMoving(bool IsMoving);
+
+	/** Sound to play each time we fire */
+	UPROPERTY(EditAnywhere, Category = Gameplay)
+	class USoundBase* FireSound;
+
+	UPROPERTY(EditAnywhere, Category = "Firing")
+	float FireRate = 0.08;
+
+	void CanShoot();
+
+	bool bCanShoot = true;
+
+	void CanRecoil();
+
 	bool bIsFiring = false;
 
 	bool bCanRecoil = true;
 
 	bool bIsWalkingForward = false;
 
-	void CanRecoil();
-
 	float MoveForwardAxis;
 
-	bool bCanFireGun = true;
-
 	bool bOnSprint = false;
+
+	bool bIsMoving;
 
 	FRotator BulletRotation;
 	FRotator SpawnRotation;
 	FVector SpawnLocation;
-
-	FRotator FPSCameraRotation;
 };
 
