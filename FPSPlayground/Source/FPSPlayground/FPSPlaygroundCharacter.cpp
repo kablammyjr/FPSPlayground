@@ -20,7 +20,7 @@ void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(AFPSPlaygroundCharacter, FPSCameraRotationRep);
+	//DOREPLIFETIME(AFPSPlaygroundCharacter, bIsADS);
 }
 
 AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
@@ -183,7 +183,7 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 			if (bOnSprint)
 			{
 				OnSprint();
-				bCanShoot = false;
+				//bCanShoot = false;
 				ReleaseTrigger();
 			}
 
@@ -195,7 +195,7 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 		if (bIsSprinting)
 		{
 			SetStopSprint();
-			bCanShoot = true;
+			//bCanShoot = true;
 		}
 
 		bIsWalkingForward = false;
@@ -225,25 +225,21 @@ void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 
 void AFPSPlaygroundCharacter::PullTrigger()
 {
-	Server_OnFireSMG(this->GetControlRotation());
+	OnFireSMG();
 }
 
 void AFPSPlaygroundCharacter::ReleaseTrigger()
 {
-	bIsFiring = false;
-	Server_StopFireSMG();
+	StopFireSMG();
 }
 
-bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation)
+void AFPSPlaygroundCharacter::OnFireSMG()
 {
-	return true;
-}
+	UE_LOG(LogTemp, Warning, TEXT("OnFireSMG"));
 
-void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation)
-{
+	bIsFiring = true;
 	if (bCanShoot)
 	{
-		bIsFiring = true;
 		// try and fire a projectile
 		if (ProjectileClass != NULL)
 		{
@@ -300,46 +296,54 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRot
 						}
 					}
 
-					SpawnRotation = CameraRotation;
-					SpawnLocation = MuzzleLocation->GetComponentLocation();
+					Server_OnFireSMG(this->GetControlRotation(), BulletRotation);
 
-					//Set Spawn Collision Handling Override
-					FActorSpawnParameters ActorSpawnParams;
-					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-					// spawn the projectile at the muzzle
-					GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-
-					if (bIsFiring)
-					{
-						bCanShoot = false;
-						OnContinuousFireSMG();
-					}
-					else { return;  }
+					FTimerHandle FuzeTimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
 				}
 			}
 		}
-		// try and play the sound if specified
-		if (FireSound != NULL)
+	}
+}
+
+bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation)
+{
+	return true;
+}
+
+void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Server_OnFireSMG_Implementation"));
+	FRotator SpawnRotation = CameraRotation + BulletRotation;
+	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
+
+	//Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+	// spawn the projectile at the muzzle
+	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+
+	// try and play the sound if specified
+	if (FireSound != NULL)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
+
+	if (FireAnimation != nullptr)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+		if (AnimInstance != nullptr)
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-		}
-		
-		if (FireAnimation != nullptr)
-		{
-			// Get the animation object for the arms mesh
-			UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-			if (AnimInstance != nullptr)
+			if (bCanRecoil)
 			{
-				if (bCanRecoil)
-				{
-					AnimInstance->Montage_Play(FireAnimation, 1.f);
+				AnimInstance->Montage_Play(FireAnimation, 1.f);
 
-					bCanRecoil = false;
+				bCanRecoil = false;
 
-					FTimerHandle FuzeTimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
-				}
+				FTimerHandle FuzeTimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
 			}
 		}
 	}
@@ -347,27 +351,9 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRot
 
 void AFPSPlaygroundCharacter::OnContinuousFireSMG()
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnContinuousFireSMG"));
 	if (bCanShoot)
 	{
-		Server_OnContinuousFireSMG(this->GetControlRotation());
-	}
-	else
-	{
-		FTimerHandle FuzeTimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanShoot, FireRate, false);
-	}
-}
-
-bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator CameraRotation)
-{
-	return true;
-}
-
-void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation)
-{
-	if (bIsFiring)
-	{
-		bIsFiring = true;
 		// try and fire a projectile
 		if (ProjectileClass != NULL)
 		{
@@ -417,62 +403,68 @@ void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator
 						BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
 					}
 
-					SpawnRotation = CameraRotation;
-					SpawnLocation = MuzzleLocation->GetComponentLocation();
-
-					//Set Spawn Collision Handling Override
-					FActorSpawnParameters ActorSpawnParams;
-					ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-					// spawn the projectile at the muzzle
-					GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-
-					if (bIsFiring)
-					{
-						bCanShoot = false;
-						OnContinuousFireSMG();
-					}
-					else { return; }
-				}
-			}
-		}
-		// try and play the sound if specified
-		if (FireSound != NULL)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-		}
-
-		if (FireAnimation != nullptr)
-		{
-			// Get the animation object for the arms mesh
-			UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-			if (AnimInstance != nullptr)
-			{
-				if (bCanRecoil)
-				{
-					AnimInstance->Montage_Play(FireAnimation, 1.f);
-
-					bCanRecoil = false;
+					Server_OnContinuousFireSMG(this->GetControlRotation(), BulletRotation);
 
 					FTimerHandle FuzeTimerHandle;
-					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
+					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
 				}
 			}
 		}
 	}
 }
 
-bool AFPSPlaygroundCharacter::Server_StopFireSMG_Validate()
+bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_StopFireSMG_Implementation()
+void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
 {
-	bCanShoot = false;
-	bIsFiring = false;
+	UE_LOG(LogTemp, Warning, TEXT("Server_OnContinuousFireSMG_Implementation"));
 
-	CanShoot();
+	FRotator SpawnRotation = CameraRotation + BulletRotation;
+	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
+
+	//Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+	// spawn the projectile at the muzzle
+	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+	
+	// try and play the sound if specified
+	if (FireSound != NULL)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
+
+	if (FireAnimation != nullptr)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			if (bCanRecoil)
+			{
+				AnimInstance->Montage_Play(FireAnimation, 1.f);
+
+				bCanRecoil = false;
+
+				FTimerHandle FuzeTimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
+			}
+		}
+	}
+}
+
+void AFPSPlaygroundCharacter::StopFireSMG()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Server_StopFireSMG_Implementation"));
+	bIsFiring = false;
+	bCanShoot = false;
+
+	FTimerHandle FuzeTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanShoot, ShootDelay, false);
 }
 
 bool AFPSPlaygroundCharacter::GetIsFiring()
@@ -520,7 +512,7 @@ void AFPSPlaygroundCharacter::StartCrouch()
 
 	bIsSprinting = false;
 	StopSprint();
-	bCanShoot = true;
+	//bCanShoot = true;
 }
 
 void AFPSPlaygroundCharacter::StopCrouch()
@@ -558,7 +550,7 @@ void AFPSPlaygroundCharacter::OnSprint()
 		{
 			SetOnSprint();
 			bIsSprinting = true;
-			bCanShoot = false;
+			//bCanShoot = false;
 
 			if (MoveForwardAxis <= 0.0f)
 			{
@@ -576,7 +568,7 @@ void AFPSPlaygroundCharacter::StopSprint()
 	if (bIsSprinting)
 	{
 		bIsSprinting = false;
-		bCanShoot = true;
+		//bCanShoot = true;
 	}
 }
 
@@ -592,6 +584,17 @@ void AFPSPlaygroundCharacter::GetIsMoving(bool IsMoving)
 
 void AFPSPlaygroundCharacter::CanShoot()
 {
+	UE_LOG(LogTemp, Warning, TEXT("CanShoot"));
 	bCanShoot = true;
-	OnContinuousFireSMG();
+}
+
+void AFPSPlaygroundCharacter::CanContinueFiring()
+{
+	if (bCanShoot)
+	{
+		if (bIsFiring)
+		{
+			OnContinuousFireSMG();
+		}
+	}
 }
