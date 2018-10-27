@@ -88,17 +88,6 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		this->SetOwner(PlayerController);
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("GetOwner: %s"), *this->GetOwner()->GetName());
-
-	if (GetNetOwningPlayer() != nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("GetNetOwningPlayer: %s"), *GetNetOwningPlayer()->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("No GetNetOwningPlayer"));
-	}
-
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 }
@@ -235,8 +224,6 @@ void AFPSPlaygroundCharacter::ReleaseTrigger()
 
 void AFPSPlaygroundCharacter::OnFireSMG()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnFireSMG"));
-
 	bIsFiring = true;
 	if (bCanShoot)
 	{
@@ -313,7 +300,6 @@ bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation,
 
 void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Server_OnFireSMG_Implementation"));
 	FRotator SpawnRotation = CameraRotation + BulletRotation;
 	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
 
@@ -351,7 +337,6 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRot
 
 void AFPSPlaygroundCharacter::OnContinuousFireSMG()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnContinuousFireSMG"));
 	if (bCanShoot)
 	{
 		// try and fire a projectile
@@ -420,8 +405,6 @@ bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator Camer
 
 void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Server_OnContinuousFireSMG_Implementation"));
-
 	FRotator SpawnRotation = CameraRotation + BulletRotation;
 	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
 
@@ -459,7 +442,6 @@ void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator
 
 void AFPSPlaygroundCharacter::StopFireSMG()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Server_StopFireSMG_Implementation"));
 	bIsFiring = false;
 	bCanShoot = false;
 
@@ -584,7 +566,6 @@ void AFPSPlaygroundCharacter::GetIsMoving(bool IsMoving)
 
 void AFPSPlaygroundCharacter::CanShoot()
 {
-	UE_LOG(LogTemp, Warning, TEXT("CanShoot"));
 	bCanShoot = true;
 }
 

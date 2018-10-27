@@ -27,13 +27,10 @@ UFPSPlaygroundGameInstance::UFPSPlaygroundGameInstance(const FObjectInitializer 
 
 void UFPSPlaygroundGameInstance::Init()
 {
-
-	UE_LOG(LogTemp, Warning, TEXT("Found class %s"), *MenuClass->GetName());
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
 	
 	if (Subsystem != nullptr && Subsystem != NULL)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Found subsystem %s"), *Subsystem->GetSubsystemName().ToString());
 		SessionInterface = Subsystem->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
@@ -123,7 +120,6 @@ void UFPSPlaygroundGameInstance::RefreshServerList()
 		//SessionSearch->bIsLanQuery = true;
 		SessionSearch->MaxSearchResults = 100;
 		SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-		UE_LOG(LogTemp, Warning, TEXT("Starting to find sessions"));
 		SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 	}
 }
@@ -132,12 +128,9 @@ void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
 {
 		if (Success && SessionSearch.IsValid() && Menu != nullptr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Finished finding sessions"));
-
 			TArray<FServerData> ServerNames;
 			for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Found sessions: %s"), *SearchResult.GetSessionIdStr());
 				FServerData Data;
 				Data.MaxPlayers = SearchResult.Session.SessionSettings.NumPublicConnections;
 				Data.Currentplayers = Data.MaxPlayers - SearchResult.Session.NumOpenPublicConnections;

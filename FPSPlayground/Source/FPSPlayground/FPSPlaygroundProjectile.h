@@ -22,6 +22,9 @@ class AFPSPlaygroundProjectile : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystemComponent* MuzzleFlash;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* BulletHitSmoke;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -44,5 +47,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Setup")
 	float TimeUntilVisible = 0.01f;
+
+	FTransform BulletHitTransform;
 };
 

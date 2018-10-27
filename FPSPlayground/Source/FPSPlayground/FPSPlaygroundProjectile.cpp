@@ -4,6 +4,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 
 AFPSPlaygroundProjectile::AFPSPlaygroundProjectile() 
@@ -24,15 +25,15 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 20000.f;
-	ProjectileMovement->MaxSpeed = 20000.f;
+	ProjectileMovement->InitialSpeed = 2000.f;
+	ProjectileMovement->MaxSpeed = 2000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 
-	MuzzleFlash = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComp"));
+	MuzzleFlash = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("MuzzleFlash"));
 	MuzzleFlash->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	MuzzleFlash->bAutoActivate = false;
-
+	
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
 }
@@ -47,7 +48,7 @@ void AFPSPlaygroundProjectile::BeginPlay()
 		SetReplicates(true);
 		SetReplicateMovement(true);
 	}
-
+	
 	FTimerHandle FuzeTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundProjectile::MakeVisible, TimeUntilVisible, false);
 }
@@ -66,6 +67,17 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 		{
 			OtherComp->AddImpulseAtLocation(GetVelocity() * 20.0f, GetActorLocation());
 		}
+		UWorld* World = GetWorld();
+		if (!ensure(World != nullptr)) return;
+		if (BulletHitSmoke != nullptr)
+		{
+			BulletHitTransform.SetRotation(UKismetMathLibrary::MakeRotFromX(-Hit.Normal).Quaternion());
+			BulletHitTransform.SetLocation(GetActorLocation());
+			BulletHitTransform.SetScale3D(GetActorScale3D());
+			
+			UGameplayStatics::SpawnEmitterAtLocation(World, BulletHitSmoke, BulletHitTransform, true, EPSCPoolMethod::None);
+		}
+		
 		Destroy();
 	}
 }
