@@ -11,7 +11,7 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 {
 	// Use a sphere as a simple collision representation
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-	CollisionComp->InitSphereRadius(20.0f);
+	CollisionComp->InitSphereRadius(10.0f);
 	CollisionComp->BodyInstance.SetCollisionProfileName("Projectile");
 	CollisionComp->OnComponentHit.AddDynamic(this, &AFPSPlaygroundProjectile::OnHit); // set up a notification for when this component hits something blocking
 
@@ -25,8 +25,8 @@ AFPSPlaygroundProjectile::AFPSPlaygroundProjectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 2000.f;
-	ProjectileMovement->MaxSpeed = 2000.f;
+	ProjectileMovement->InitialSpeed = 10000.f;
+	ProjectileMovement->MaxSpeed = 20000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = false;
 

@@ -97,17 +97,17 @@ public:
 	void OnFireSMG();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_OnFireSMG(FRotator CameraRotation, FRotator BulletRotation);
-	void Server_OnFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation);
-	bool Server_OnFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation);
+	void Server_OnFireSMG(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
+	void Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
+	bool Server_OnFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
 
 	UFUNCTION()
 	void OnContinuousFireSMG();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_OnContinuousFireSMG(FRotator CameraRotation, FRotator BulletRotation);
-	void Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation);
-	bool Server_OnContinuousFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation);
+	void Server_OnContinuousFireSMG(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
+	void Server_OnContinuousFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
+	bool Server_OnContinuousFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
 
 	UFUNCTION()
 	void StopFireSMG();

@@ -283,7 +283,7 @@ void AFPSPlaygroundCharacter::OnFireSMG()
 						}
 					}
 
-					Server_OnFireSMG(this->GetControlRotation(), BulletRotation);
+					Server_OnFireSMG(MuzzleLocation->GetComponentRotation(), BulletRotation, MuzzleLocation->GetComponentLocation());
 
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
@@ -293,15 +293,15 @@ void AFPSPlaygroundCharacter::OnFireSMG()
 	}
 }
 
-bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation)
+bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
+void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
-	FRotator SpawnRotation = CameraRotation + BulletRotation;
-	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
+	FRotator SpawnRotation = MuzzleRotation + BulletRotation;
+	FVector SpawnLocation = MuzzleLocationSpawn;
 
 	//Set Spawn Collision Handling Override
 	FActorSpawnParameters ActorSpawnParams;
@@ -388,7 +388,7 @@ void AFPSPlaygroundCharacter::OnContinuousFireSMG()
 						BulletRotation = FRotator(FMath::RandRange(-8.0f, 8.0f), FMath::RandRange(-8.0f, 8.0f), 0.0f);
 					}
 
-					Server_OnContinuousFireSMG(this->GetControlRotation(), BulletRotation);
+					Server_OnContinuousFireSMG(MuzzleLocation->GetComponentRotation(), BulletRotation, MuzzleLocation->GetComponentLocation());
 
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
@@ -398,15 +398,15 @@ void AFPSPlaygroundCharacter::OnContinuousFireSMG()
 	}
 }
 
-bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator CameraRotation, FRotator BulletRotation)
+bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator CameraRotation, FRotator BulletRotation)
+void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
-	FRotator SpawnRotation = CameraRotation + BulletRotation;
-	FVector SpawnLocation = MuzzleLocation->GetComponentLocation();
+	FRotator SpawnRotation = MuzzleRotation + BulletRotation;
+	FVector SpawnLocation = MuzzleLocationSpawn;
 
 	//Set Spawn Collision Handling Override
 	FActorSpawnParameters ActorSpawnParams;
