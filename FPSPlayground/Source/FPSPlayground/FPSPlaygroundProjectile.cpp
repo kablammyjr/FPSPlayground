@@ -69,13 +69,13 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 		}
 		UWorld* World = GetWorld();
 		if (!ensure(World != nullptr)) return;
-		if (BulletHitSmoke != nullptr)
+		if (BulletHit != nullptr)
 		{
 			BulletHitTransform.SetRotation(UKismetMathLibrary::MakeRotFromX(-Hit.Normal).Quaternion());
 			BulletHitTransform.SetLocation(GetActorLocation());
-			BulletHitTransform.SetScale3D(GetActorScale3D());
+			BulletHitTransform.SetScale3D(GetActorScale3D() * 1.5f);
 			
-			UGameplayStatics::SpawnEmitterAtLocation(World, BulletHitSmoke, BulletHitTransform, true, EPSCPoolMethod::None);
+			UGameplayStatics::SpawnEmitterAtLocation(World, BulletHit, BulletHitTransform, true, EPSCPoolMethod::None);
 		}
 		
 		Destroy();
