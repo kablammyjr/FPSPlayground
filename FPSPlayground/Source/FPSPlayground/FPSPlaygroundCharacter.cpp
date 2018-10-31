@@ -90,6 +90,8 @@ void AFPSPlaygroundCharacter::BeginPlay()
 
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+
+	Mesh1PAnimInstance = Mesh1P->GetAnimInstance();
 }
 
 FString GetEnumText(ENetRole Role)
@@ -284,6 +286,7 @@ void AFPSPlaygroundCharacter::OnFireSMG()
 					}
 
 					Server_OnFireSMG(MuzzleLocation->GetComponentRotation(), BulletRotation, MuzzleLocation->GetComponentLocation());
+					PlayRecoilAnimationAndSoundSMG();
 
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
@@ -300,39 +303,13 @@ bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation,
 
 void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
-	FRotator SpawnRotation = MuzzleRotation + BulletRotation;
-	FVector SpawnLocation = MuzzleLocationSpawn;
-
 	//Set Spawn Collision Handling Override
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 	// spawn the projectile at the muzzle
-	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
 
-	// try and play the sound if specified
-	if (FireSound != NULL)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
-
-	if (FireAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			if (bCanRecoil)
-			{
-				AnimInstance->Montage_Play(FireAnimation, 1.f);
-
-				bCanRecoil = false;
-
-				FTimerHandle FuzeTimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
-			}
-		}
-	}
 }
 
 void AFPSPlaygroundCharacter::OnContinuousFireSMG()
@@ -389,6 +366,7 @@ void AFPSPlaygroundCharacter::OnContinuousFireSMG()
 					}
 
 					Server_OnContinuousFireSMG(MuzzleLocation->GetComponentRotation(), BulletRotation, MuzzleLocation->GetComponentLocation());
+					PlayRecoilAnimationAndSoundSMG();
 
 					FTimerHandle FuzeTimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanContinueFiring, FireRate, false);
@@ -405,48 +383,21 @@ bool AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Validate(FRotator Muzzl
 
 void AFPSPlaygroundCharacter::Server_OnContinuousFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
-	FRotator SpawnRotation = MuzzleRotation + BulletRotation;
-	FVector SpawnLocation = MuzzleLocationSpawn;
-
 	//Set Spawn Collision Handling Override
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 	// spawn the projectile at the muzzle
-	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-	
-	// try and play the sound if specified
-	if (FireSound != NULL)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
-
-	if (FireAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			if (bCanRecoil)
-			{
-				AnimInstance->Montage_Play(FireAnimation, 1.f);
-
-				bCanRecoil = false;
-
-				FTimerHandle FuzeTimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
-			}
-		}
-	}
+	GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
 }
 
 void AFPSPlaygroundCharacter::StopFireSMG()
 {
-	bIsFiring = false;
+	/*bIsFiring = false;
 	bCanShoot = false;
 
 	FTimerHandle FuzeTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanShoot, ShootDelay, false);
+	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanShoot, ShootDelay, false);*/
 }
 
 bool AFPSPlaygroundCharacter::GetIsFiring()
@@ -454,25 +405,35 @@ bool AFPSPlaygroundCharacter::GetIsFiring()
 	return bIsFiring;
 }
 
-void AFPSPlaygroundCharacter::PlayRecoilAnimation()
+void AFPSPlaygroundCharacter::PlayRecoilAnimationAndSoundSMG()
 {
-	if (FireAnimation != nullptr)
+	UWorld* const World = GetWorld();
+	if (World != NULL)
 	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != nullptr)
+		if (Mesh1PAnimInstance != nullptr && FireAnimation != nullptr && SMGFireSound != nullptr)
 		{
 			if (bCanRecoil)
 			{
-				AnimInstance->Montage_Play(FireAnimation, 1.f);
+				Server_PlayRecoilAnimationAndSoundSMG(this, SMGFireSound, MuzzleLocation->GetComponentLocation());
 
 				bCanRecoil = false;
-
 				FTimerHandle FuzeTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundCharacter::CanRecoil, 0.1f, false);
 			}
+
 		}
 	}
+}
+
+bool AFPSPlaygroundCharacter::Server_PlayRecoilAnimationAndSoundSMG_Validate(AActor* Actor, USoundBase* Sound, FVector Location)
+{
+	return true;
+}
+
+void AFPSPlaygroundCharacter::Server_PlayRecoilAnimationAndSoundSMG_Implementation(AActor* Actor, USoundBase* Sound, FVector Location)
+{
+	//AnimInstance->Montage_Play(RecoilAnim, 1.f);
+	UGameplayStatics::PlaySoundAtLocation(Actor, Sound, Location, 0.5f, 0.7f);
 }
 
 void AFPSPlaygroundCharacter::OnADS()

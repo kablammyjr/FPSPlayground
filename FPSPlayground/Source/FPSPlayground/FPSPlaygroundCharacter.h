@@ -66,8 +66,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* MuzzleLocation;
 
-	UFUNCTION(BlueprintCallable)
-	void PlayRecoilAnimation();
+	UFUNCTION()
+	void PlayRecoilAnimationAndSoundSMG();
+
+	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
+	void Server_PlayRecoilAnimationAndSoundSMG(AActor* Actor, USoundBase* Sound, FVector Location);
+	void Server_PlayRecoilAnimationAndSoundSMG_Implementation(AActor* Actor, USoundBase* Sound, FVector Location);
+	bool Server_PlayRecoilAnimationAndSoundSMG_Validate(AActor* Actor, USoundBase* Sound, FVector Location);
 
 	void OnADS();
 
@@ -162,7 +167,7 @@ private:
 
 	/** Sound to play each time we fire */
 	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
-	class USoundBase* FireSound;
+	class USoundBase* SMGFireSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Firing")
 	float FireRate = 0.08f;
@@ -188,6 +193,8 @@ private:
 	bool bOnSprint = false;
 
 	bool bIsMoving;
+
+	UAnimInstance* Mesh1PAnimInstance;
 
 	FRotator BulletRotation;
 	FRotator SpawnRotation;
