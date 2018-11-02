@@ -26,11 +26,6 @@ void ASMG::BeginPlay()
 	UWorld* World = GetWorld();
 	if (!ensure(World != nullptr)) return;
 
-	/*APlayerController* PlayerController = World->GetFirstLocalPlayerFromController()->GetPlayerController(World);
-	if (!ensure(PlayerController != nullptr)) return;*/
-
-	/*this->SetOwner(UGameplayStatics::GetPlayerCharacter(World, 0));*/
-
 	FPSCharacter = Cast<AFPSPlaygroundCharacter>(UGameplayStatics::GetPlayerCharacter(World, 0));
 }
 
@@ -103,7 +98,7 @@ void ASMG::OnFireSMG()
 				}
 
 				FPSCharacter->OnFire(BulletRotation);
-				PlayRecoilAnimationSMG();
+				PlayRecoilAndSoundSMG();
 
 				FTimerHandle FuzeTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanContinueFiring, FireRate, false);
@@ -167,7 +162,7 @@ void ASMG::OnContinuousFireSMG()
 				}
 
 				FPSCharacter->OnFire(BulletRotation);
-				PlayRecoilAnimationSMG();
+				PlayRecoilAndSoundSMG();
 
 				FTimerHandle FuzeTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanContinueFiring, FireRate, false);
@@ -185,23 +180,19 @@ void ASMG::StopFireSMG()
 	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanShoot, ShootDelay, false);
 }
 
-void ASMG::PlayRecoilAnimationSMG()
+void ASMG::PlayRecoilAndSoundSMG()
 {
-	UWorld* const World = GetWorld();
-	if (World != NULL)
+	if (SMGFireSound != nullptr && SMGFireAnimation1P != nullptr)
 	{
-		/*if (Mesh1PAnimInstance != nullptr && FireAnimation != nullptr && SMGFireSound != nullptr)
+		if (bCanRecoil)
 		{
-			if (bCanRecoil)
-			{
-				Server_PlayRecoilAnimationAndSoundSMG(this, SMGFireSound, MuzzleLocation->GetComponentLocation());
+			FPSCharacter->FireSoundSMG(SMGFireSound);
+			FPSCharacter->FireAnimationSMG(SMGFireAnimation1P);
 
-				bCanRecoil = false;
-				FTimerHandle FuzeTimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanRecoil, 0.1f, false);
-			}
-
-		}*/
+			bCanRecoil = false;
+			FTimerHandle FuzeTimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanRecoil, 0.1f, false);
+		}
 	}
 }
 

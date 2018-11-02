@@ -29,7 +29,7 @@ public:
 
 	/** AnimMontage to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* SMGFireAnimation;
+	class UAnimMontage* SMGFireAnimation1P;
 
 	/** Sound to play each time we fire */
 	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
@@ -63,7 +63,7 @@ public:
 private:
 
 	UFUNCTION()
-	void PlayRecoilAnimationSMG();
+	void PlayRecoilAndSoundSMG();
 
 	void CanShoot();
 	void CanContinueFiring();

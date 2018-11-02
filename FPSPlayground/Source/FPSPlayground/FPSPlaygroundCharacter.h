@@ -63,10 +63,20 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh)
 	class USkeletalMeshComponent* Mesh3P;
 
-	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
-	void Server_PlayRecoilAnimationAndSoundSMG(AActor* Actor, USoundBase* Sound, FVector Location);
-	void Server_PlayRecoilAnimationAndSoundSMG_Implementation(AActor* Actor, USoundBase* Sound, FVector Location);
-	bool Server_PlayRecoilAnimationAndSoundSMG_Validate(AActor* Actor, USoundBase* Sound, FVector Location);
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	class UAnimMontage* SMGFireAnimation3P;
+
+	UFUNCTION()
+	void FireSoundSMG(USoundBase* Sound);
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_FireSoundSMG(USoundBase* Sound);
+	void Server_FireSoundSMG_Implementation(USoundBase* Sound);
+	bool Server_FireSoundSMG_Validate(USoundBase* Sound);
+
+	UFUNCTION()
+	void FireAnimationSMG(UAnimMontage* FireAnimation1P);
 
 	void OnADS();
 
@@ -160,6 +170,7 @@ private:
 	bool bIsMoving;
 
 	UAnimInstance* Mesh1PAnimInstance;
+	UAnimInstance* Mesh3PAnimInstance;
 
 	FRotator SpawnRotation;
 	FVector SpawnLocation;

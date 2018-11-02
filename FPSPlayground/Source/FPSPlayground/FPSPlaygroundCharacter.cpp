@@ -21,7 +21,7 @@ void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(AFPSPlaygroundCharacter, bIsADS);
+	/*DOREPLIFETIME(AFPSPlaygroundCharacter, SMGFireSound);*/
 }
 
 AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
@@ -88,6 +88,7 @@ void AFPSPlaygroundCharacter::BeginPlay()
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 
 	Mesh1PAnimInstance = Mesh1P->GetAnimInstance();
+	Mesh3PAnimInstance = Mesh3P->GetAnimInstance();
 
 	SpawnedWeapon();
 }
@@ -224,18 +225,31 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRot
 	{
 		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
 	}
-
 }
 
-bool AFPSPlaygroundCharacter::Server_PlayRecoilAnimationAndSoundSMG_Validate(AActor* Actor, USoundBase* Sound, FVector Location)
+void AFPSPlaygroundCharacter::FireSoundSMG(USoundBase* Sound)
+{
+	Server_FireSoundSMG(Sound);
+}
+
+bool AFPSPlaygroundCharacter::Server_FireSoundSMG_Validate(USoundBase* Sound)
 {
 	return true;
 }
 
-void AFPSPlaygroundCharacter::Server_PlayRecoilAnimationAndSoundSMG_Implementation(AActor* Actor, USoundBase* Sound, FVector Location)
+void AFPSPlaygroundCharacter::Server_FireSoundSMG_Implementation(USoundBase* Sound)
 {
-	//AnimInstance->Montage_Play(RecoilAnim, 1.f);
-	UGameplayStatics::PlaySoundAtLocation(Actor, Sound, Location, 0.5f, 0.7f);
+	UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation(), 0.5f, 0.7f);
+}
+
+void AFPSPlaygroundCharacter::FireAnimationSMG(UAnimMontage* FireAnimation1P)
+{
+	Mesh1PAnimInstance->Montage_Play(FireAnimation1P, 1.f);
+
+	if (Mesh3PAnimInstance != nullptr)
+	{
+		Mesh3PAnimInstance->Montage_Play(SMGFireAnimation3P, 1.0f);
+	}
 }
 
 void AFPSPlaygroundCharacter::OnADS()
