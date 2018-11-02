@@ -8,6 +8,7 @@
 #include "FPSPlaygroundCharacter.generated.h"
 
 class UInputComponent;
+class ASMG;
 
 UCLASS(config=Game)
 class AFPSPlaygroundCharacter : public ACharacter
@@ -18,8 +19,14 @@ class AFPSPlaygroundCharacter : public ACharacter
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* Mesh1P;
 
+	UPROPERTY(VisibleDefaultsOnly, Category = Weapons)
+	ASMG* SMG;
+
+	UPROPERTY(EditDefaultsOnly, Category = Weapons)
+	TSubclassOf<ASMG> SMGBlueprint;
+
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* GunMesh1P;
+	class USkeletalMeshComponent* Mesh3P;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	class USkeletalMeshComponent* GunMesh3P;
@@ -44,9 +51,6 @@ public:
 protected:
 	virtual void BeginPlay();
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh)
-	class USkeletalMeshComponent* Mesh3P;
-
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -56,18 +60,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-	UFUNCTION(BlueprintCallable)
-	bool GetIsFiring();
-
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimMontage* FireAnimation;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* MuzzleLocation;
-
-	UFUNCTION()
-	void PlayRecoilAnimationAndSoundSMG();
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
 	void Server_PlayRecoilAnimationAndSoundSMG(AActor* Actor, USoundBase* Sound, FVector Location);
@@ -79,9 +73,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ReleaseADS();
 
-	UFUNCTION(BlueprintCallable)
-	bool GetCanFireGun();
-
 	bool GetIsCrouched();
 
 	bool bIsSprinting = false;
@@ -89,33 +80,28 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetIsADS();
 
+	UFUNCTION(BlueprintCallable)
+	bool GetIsMoving();
+
 	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
 	void SetOnSprint();
 
 	UFUNCTION(Category = "Movement", BlueprintImplementableEvent)
 	void SetStopSprint();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void SpawnedWeapon();
+
 	UPROPERTY()
 	bool bIsADS = false;
 
 	UFUNCTION()
-	void OnFireSMG();
+	void OnFire(FRotator BulletRotation);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_OnFireSMG(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
 	void Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
 	bool Server_OnFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
-
-	UFUNCTION()
-	void OnContinuousFireSMG();
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_OnContinuousFireSMG(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
-	void Server_OnContinuousFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
-	bool Server_OnContinuousFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
-
-	UFUNCTION()
-	void StopFireSMG();
 
 protected:
 
@@ -163,28 +149,7 @@ public:
 private:
 
 	UFUNCTION(BlueprintCallable)
-	void GetIsMoving(bool IsMoving);
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
-	class USoundBase* SMGFireSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float FireRate = 0.08f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Firing")
-	float ShootDelay = 0.08f;
-
-	void CanShoot();
-	void CanContinueFiring();
-
-	bool bCanShoot = true;
-
-	void CanRecoil();
-
-	bool bIsFiring = false;
-
-	bool bCanRecoil = true;
+	void RecieveIsMoving(bool IsMoving);
 
 	bool bIsWalkingForward = false;
 
@@ -196,7 +161,6 @@ private:
 
 	UAnimInstance* Mesh1PAnimInstance;
 
-	FRotator BulletRotation;
 	FRotator SpawnRotation;
 	FVector SpawnLocation;
 };

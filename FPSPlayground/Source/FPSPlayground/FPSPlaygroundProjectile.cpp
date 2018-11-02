@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "FPSPlaygroundCharacter.h"
 
 AFPSPlaygroundProjectile::AFPSPlaygroundProjectile() 
 {
@@ -77,7 +78,7 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 			
 			UGameplayStatics::SpawnEmitterAtLocation(World, BulletHit, BulletHitTransform, true, EPSCPoolMethod::None);
 		}
-		
+
 		Destroy();
 	}
 }

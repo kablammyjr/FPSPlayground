@@ -15,6 +15,4 @@ class FPSPLAYGROUND_API AFPSPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 
-
-	
 };
