@@ -19,14 +19,8 @@ class AFPSPlaygroundCharacter : public ACharacter
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* Mesh1P;
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Weapons)
-	ASMG* SMG;
-
 	UPROPERTY(EditDefaultsOnly, Category = Weapons)
 	TSubclassOf<ASMG> SMGBlueprint;
-
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* Mesh3P;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	class USkeletalMeshComponent* GunMesh3P;
@@ -51,6 +45,9 @@ public:
 protected:
 	virtual void BeginPlay();
 
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Weapons)
+	ASMG* SMG;
+
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -62,6 +59,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* MuzzleLocation;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh)
+	class USkeletalMeshComponent* Mesh3P;
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation, BlueprintCallable)
 	void Server_PlayRecoilAnimationAndSoundSMG(AActor* Actor, USoundBase* Sound, FVector Location);
