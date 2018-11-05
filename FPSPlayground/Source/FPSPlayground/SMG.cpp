@@ -2,10 +2,11 @@
 
 #include "SMG.h"
 #include "FPSPlaygroundCharacter.h"
-#include "FPSPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
-
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Sets default values
 ASMG::ASMG()
 {
@@ -35,6 +36,16 @@ void ASMG::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+
+
+
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FIRING 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ASMG::OnFireSMG()
 {
 	bIsCrouching = FPSCharacter->GetIsCrouched();
@@ -196,16 +207,6 @@ void ASMG::PlayRecoilAndSoundSMG()
 	}
 }
 
-void ASMG::CanShoot()
-{
-	bCanShoot = true;
-}
-
-void ASMG::CanRecoil()
-{
-	bCanRecoil = true;
-}
-
 void ASMG::CanContinueFiring()
 {
 	if (bCanShoot)
@@ -217,12 +218,12 @@ void ASMG::CanContinueFiring()
 	}
 }
 
-bool ASMG::GetIsFiring()
+void ASMG::CanShoot()
 {
-	return bIsFiring;
+	bCanShoot = true;
 }
 
-bool ASMG::GetCanFireGun()
+void ASMG::CanRecoil()
 {
-	return bCanShoot;
+	bCanRecoil = true;
 }

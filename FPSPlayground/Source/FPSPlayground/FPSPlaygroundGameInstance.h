@@ -17,21 +17,43 @@ class FPSPLAYGROUND_API UFPSPlaygroundGameInstance : public UGameInstance, publi
 {
 	GENERATED_BODY()
 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
 	UFPSPlaygroundGameInstance(const FObjectInitializer & ObjectInitializer);
-	
-	virtual void Init();
 
+	virtual void Init();
+	virtual void LoadMainMenuLevel() override;
+	virtual void RefreshServerList();
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MENUS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
 	UFUNCTION(BlueprintCallable)
 	void LoadMainMenu();
 
 	UFUNCTION(BlueprintCallable)
 	void LoadInGameMenu();
 
-	virtual void LoadMainMenuLevel() override;
+private:
+	TSubclassOf<class UUserWidget> MenuClass;
+	TSubclassOf<class UUserWidget> InGameMenuClass;
 
-	virtual void RefreshServerList();
+	class UMainMenu* Menu;
 
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SESSIONS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
 	UFUNCTION()
 	void Host(FString ServerName) override;
 
@@ -39,25 +61,14 @@ public:
 	void Join(uint32 Index) override;
 
 private:
-
-	TSubclassOf<class UUserWidget> MenuClass;
-	TSubclassOf<class UUserWidget> InGameMenuClass;
-
-	class UMainMenu* Menu;
-
 	IOnlineSessionPtr SessionInterface;
-
 	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 
+	void CreateSession();
 	void OnCreateSessionComplete(FName SessionName, bool Success);
-
+	void OnFindSessionsComplete(bool Success);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void OnDestroySessionComplete(FName SessionName, bool Success);
 
-	void OnFindSessionsComplete(bool Success);
-
-	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-
 	FString DesiredServerName;
-
-	void CreateSession();
 };

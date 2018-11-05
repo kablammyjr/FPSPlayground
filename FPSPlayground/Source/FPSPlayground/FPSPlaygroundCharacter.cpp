@@ -14,14 +14,17 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
-//////////////////////////////////////////////////////////////////////////
-// AFPSPlaygroundCharacter
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	/*DOREPLIFETIME(AFPSPlaygroundCharacter, SMGFireSound);*/
 }
 
 AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
@@ -35,6 +38,10 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+
+
+	/////////////// COMPONENTS //////////////////
 
 	// Create a CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
@@ -72,6 +79,7 @@ void AFPSPlaygroundCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
+	// SMG spawn and setup
 	if (SMGBlueprint == nullptr) {
 		UE_LOG(LogTemp, Warning, TEXT("SMG blueprint missing."));
 		return;
@@ -84,6 +92,7 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		SMG->SetOwner(this);
 		SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	}
+
 
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 
@@ -98,12 +107,16 @@ void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Input
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// INPUT
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	// set up gameplay key bindings
+	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 
 	// Bind jump events
@@ -120,9 +133,6 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
 
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFPSPlaygroundCharacter::OnSprint);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFPSPlaygroundCharacter::StopSprint);
-
 	// Bind movement events
 	PlayerInputComponent->BindAxis("MoveForward", this, &AFPSPlaygroundCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AFPSPlaygroundCharacter::MoveRight);
@@ -136,6 +146,16 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFPSPlaygroundCharacter::LookUpAtRate);
 }
 
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MOVEMENT
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 void AFPSPlaygroundCharacter::MoveForward(float Value)
 {
 
@@ -143,33 +163,8 @@ void AFPSPlaygroundCharacter::MoveForward(float Value)
 
 	if (Value != 0.0f)
 	{
-		// add movement in that direction
+		// Add movement in that direction
 		AddMovementInput(GetActorForwardVector(), Value);
-	}
-
-	if (Value > 0.0f)
-	{
-		if (!bIsCrouched)
-		{
-			if (bOnSprint)
-			{
-				OnSprint();
-				//bCanShoot = false;
-				ReleaseTrigger();
-			}
-
-			bIsWalkingForward = true;
-		}
-	}
-	else
-	{
-		if (bIsSprinting)
-		{
-			SetStopSprint();
-			//bCanShoot = true;
-		}
-
-		bIsWalkingForward = false;
 	}
 }
 
@@ -177,22 +172,42 @@ void AFPSPlaygroundCharacter::MoveRight(float Value)
 {
 	if (Value != 0.0f)
 	{
-		// add movement in that direction
+		// Add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
 	}
 }
 
 void AFPSPlaygroundCharacter::TurnAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
+	// Calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
 void AFPSPlaygroundCharacter::LookUpAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
+	// Calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
+
+void AFPSPlaygroundCharacter::StartCrouch()
+{
+	Crouch();
+}
+
+void AFPSPlaygroundCharacter::StopCrouch()
+{
+	UnCrouch();
+}
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FIRING
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 void AFPSPlaygroundCharacter::PullTrigger()
 {
@@ -209,6 +224,15 @@ void AFPSPlaygroundCharacter::OnFire(FRotator BulletRotation)
 	Server_OnFireSMG(MuzzleLocation->GetComponentRotation(), BulletRotation, MuzzleLocation->GetComponentLocation());
 }
 
+void AFPSPlaygroundCharacter::FireSoundSMG(USoundBase* Sound)
+{
+	Server_FireSoundSMG(Sound);
+}
+
+
+//////////////// RPCs START ////////////////////
+
+
 bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
 	return true;
@@ -216,20 +240,15 @@ bool AFPSPlaygroundCharacter::Server_OnFireSMG_Validate(FRotator MuzzleRotation,
 
 void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn)
 {
-	//Set Spawn Collision Handling Override
+	// Set Spawn Collision Handling Override
 	FActorSpawnParameters ActorSpawnParams;
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-	// spawn the projectile at the muzzle
+	// Spawn the projectile at the muzzle
 	if (ProjectileClass != NULL)
 	{
 		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
 	}
-}
-
-void AFPSPlaygroundCharacter::FireSoundSMG(USoundBase* Sound)
-{
-	Server_FireSoundSMG(Sound);
 }
 
 bool AFPSPlaygroundCharacter::Server_FireSoundSMG_Validate(USoundBase* Sound)
@@ -241,6 +260,10 @@ void AFPSPlaygroundCharacter::Server_FireSoundSMG_Implementation(USoundBase* Sou
 {
 	UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation(), 0.5f, 0.7f);
 }
+
+/////////////////// RPCs END //////////////////////
+
+
 
 void AFPSPlaygroundCharacter::FireAnimationSMG(UAnimMontage* FireAnimation1P)
 {
@@ -254,10 +277,7 @@ void AFPSPlaygroundCharacter::FireAnimationSMG(UAnimMontage* FireAnimation1P)
 
 void AFPSPlaygroundCharacter::OnADS()
 {
-	if (!bIsSprinting)
-	{
-		bIsADS = true;
-	}
+	bIsADS = true;
 }
 
 void AFPSPlaygroundCharacter::ReleaseADS()
@@ -265,73 +285,20 @@ void AFPSPlaygroundCharacter::ReleaseADS()
 	bIsADS = false;
 }
 
-void AFPSPlaygroundCharacter::StartCrouch()
-{
-	Crouch();
 
-	bIsSprinting = false;
-	StopSprint();
-	//bCanShoot = true;
-}
 
-void AFPSPlaygroundCharacter::StopCrouch()
-{
-	UnCrouch();
 
-	if (bOnSprint)
-	{
-		OnSprint();
-	}
-}
-
-bool AFPSPlaygroundCharacter::GetIsADS()
-{
-	return bIsADS;
-}
-
-bool AFPSPlaygroundCharacter::GetIsCrouched()
-{
-	return bIsCrouched;
-}
-
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GETTERS
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool AFPSPlaygroundCharacter::GetIsMoving()
 {
-	return bIsMoving;
-}
-
-void AFPSPlaygroundCharacter::OnSprint()
-{
-	bOnSprint = true;
-
-	if (!bIsCrouched)
+	if (GetCharacterMovement()->Velocity.Size() > 0.0f)
 	{
-		if (MoveForwardAxis > 0.0f)
-		{
-			SetOnSprint();
-			bIsSprinting = true;
-			//bCanShoot = false;
-
-			if (MoveForwardAxis <= 0.0f)
-			{
-				StopSprint();
-			}
-		}
+		return true;
 	}
-}
-
-void AFPSPlaygroundCharacter::StopSprint()
-{
-	bOnSprint = false;
-	SetStopSprint();
-
-	if (bIsSprinting)
+	else
 	{
-		bIsSprinting = false;
-		//bCanShoot = true;
+		return false;
 	}
-}
-
-void AFPSPlaygroundCharacter::RecieveIsMoving(bool IsMoving)
-{
-	bIsMoving = IsMoving;
 }

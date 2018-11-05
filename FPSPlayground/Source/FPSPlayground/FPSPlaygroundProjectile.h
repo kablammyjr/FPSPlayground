@@ -10,44 +10,67 @@ UCLASS(config=Game)
 class AFPSPlaygroundProjectile : public AActor
 {
 	GENERATED_BODY()
-
-	/** Sphere collision component */
-	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
-	class USphereComponent* CollisionComp;
-
-	/** Projectile movement component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	class UProjectileMovementComponent* ProjectileMovement;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystemComponent* MuzzleFlash;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* BulletHit;
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
+	AFPSPlaygroundProjectile();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
-	AFPSPlaygroundProjectile();
 
-	/** called when projectile hits something */
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	/** Returns CollisionComp subobject **/
-	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
-	/** Returns ProjectileMovement subobject **/
-	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
-
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// COMPONENTS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 private:
+	/** Sphere collision component */
+	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
+	class USphereComponent* CollisionComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystemComponent* MuzzleFlash;
+
+	/** Projectile movement component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	class UProjectileMovementComponent* ProjectileMovement;
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MOVEMENT 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+private:
 	void MakeVisible();
 
 	UPROPERTY(EditAnywhere, Category = "Setup")
 	float TimeUntilVisible = 0.005f;
 
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ON HIT 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
+	/** called when projectile hits something */
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+private:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* BulletHit;
+
 	FTransform BulletHitTransform;
+
+
+
+	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// GETTERS 
+	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
+	/** Returns CollisionComp subobject **/
+	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
+	/** Returns ProjectileMovement subobject **/
+	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 };
 

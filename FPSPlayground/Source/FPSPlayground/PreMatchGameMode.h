@@ -15,12 +15,9 @@ class FPSPLAYGROUND_API APreMatchGameMode : public AFPSPlaygroundGameMode
 	GENERATED_BODY()
 
 public:
-
 	void PostLogin(APlayerController* NewPlayer) override;
-	
 	void Logout(AController* Exiting) override;
 
 private:
-
 	uint32 NumberOfPlayers = 0;
 };

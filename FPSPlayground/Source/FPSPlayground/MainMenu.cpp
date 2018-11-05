@@ -8,6 +8,10 @@
 #include "UObject/ConstructorHelpers.h"
 #include "ServerList.h"
 
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 UMainMenu::UMainMenu(const FObjectInitializer & ObjectInitializer)
 {
 	ConstructorHelpers::FClassFinder<UUserWidget> ServerListBPClass(TEXT("/Game/Menu/WBP_ServerList"));
@@ -48,6 +52,22 @@ bool UMainMenu::Initialize()
 	return true;
 }
 
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// COMPONENT FUNCTIONS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void UMainMenu::OpenMainMenu()
+{
+	if (!ensure(MenuSwitcher != nullptr)) return;
+	if (!ensure(MainMenu != nullptr)) return;
+	MenuSwitcher->SetActiveWidget(MainMenu);
+}
+
+/////////// HOSTING //////////////
+
 void UMainMenu::OpenHostMenu()
 {
 	if (!ensure(MenuSwitcher != nullptr)) return;
@@ -63,6 +83,22 @@ void UMainMenu::HostServer()
 		MenuInterface->Host(ServerName);
 	}
 }
+
+///////////// JOINING ///////////////
+
+void UMainMenu::OpenJoinMenu()
+{
+	if (!ensure(MenuSwitcher != nullptr)) return;
+	if (!ensure(JoinMenu != nullptr)) return;
+	MenuSwitcher->SetActiveWidget(JoinMenu);
+
+	if (MenuInterface != nullptr)
+	{
+		MenuInterface->RefreshServerList();
+	}
+}
+
+//////////// UPDATING SERVER LIST //////////////
 
 void UMainMenu::SetServerList(TArray<FServerData> ServerNames)
 {
@@ -88,12 +124,6 @@ void UMainMenu::SetServerList(TArray<FServerData> ServerNames)
 	}
 }
 
-void UMainMenu::SelectIndex(uint32 Index)
-{
-	SelectedIndex = Index;
-	UpdateChildren();
-}
-
 void UMainMenu::UpdateChildren()
 {
 	for (int32 i = 0; i < ServerList->GetChildrenCount(); ++i)
@@ -106,6 +136,13 @@ void UMainMenu::UpdateChildren()
 	}
 }
 
+void UMainMenu::SelectIndex(uint32 Index)
+{
+	SelectedIndex = Index;
+	UpdateChildren();
+}
+
+
 void UMainMenu::JoinServer()
 {
 	if (SelectedIndex.IsSet() && MenuInterface != nullptr)
@@ -113,6 +150,8 @@ void UMainMenu::JoinServer()
 		MenuInterface->Join(SelectedIndex.GetValue());
 	}
 }
+
+///////////// QUITING //////////////
 
 void UMainMenu::QuitGame()
 {
@@ -124,23 +163,4 @@ void UMainMenu::QuitGame()
 
 	PlayerController->ConsoleCommand("quit");
 
-}
-
-void UMainMenu::OpenMainMenu()
-{
-	if (!ensure(MenuSwitcher != nullptr)) return;
-	if (!ensure(MainMenu != nullptr)) return;
-	MenuSwitcher->SetActiveWidget(MainMenu);
-}
-
-void UMainMenu::OpenJoinMenu()
-{
-	if (!ensure(MenuSwitcher != nullptr)) return;
-	if (!ensure(JoinMenu != nullptr)) return;
-	MenuSwitcher->SetActiveWidget(JoinMenu);
-
-	if (MenuInterface != nullptr)
-	{
-		MenuInterface->RefreshServerList();
-	}
 }

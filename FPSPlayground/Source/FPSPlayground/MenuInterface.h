@@ -13,9 +13,6 @@ class UMenuInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class FPSPLAYGROUND_API IMenuInterface
 {
 	GENERATED_BODY()

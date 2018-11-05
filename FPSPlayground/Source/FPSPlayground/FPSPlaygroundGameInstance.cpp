@@ -12,6 +12,9 @@
 const static FName SESSION_NAME = TEXT("GameSession");
 const static FName SERVER_NAME_SETTINGS_KEY = TEXT("ServerName");
 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 UFPSPlaygroundGameInstance::UFPSPlaygroundGameInstance(const FObjectInitializer & ObjectInitializer)
 {
 	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/Menu/WBP_MainMenu"));
@@ -47,13 +50,29 @@ void UFPSPlaygroundGameInstance::Init()
 	
 }
 
+
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MENUS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void UFPSPlaygroundGameInstance::LoadMainMenuLevel()
+{
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!ensure(PlayerController != nullptr)) return;
+
+	PlayerController->ClientTravel("/Game/Menu/MainMenu", ETravelType::TRAVEL_Absolute);
+}
+
 void UFPSPlaygroundGameInstance::LoadMainMenu()
 {
 	if (!ensure(MenuClass != nullptr)) return;
 
 	Menu = CreateWidget<UMainMenu>(this, MenuClass);
 	if (!ensure(Menu != nullptr)) return;
-
+	
 	Menu->Setup();
 
 	Menu->SetMenuInterface(this);
@@ -71,6 +90,15 @@ void UFPSPlaygroundGameInstance::LoadInGameMenu()
 	Menu->SetMenuInterface(this);
 }
 
+
+
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CREATE SESSION
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void UFPSPlaygroundGameInstance::Host(FString ServerName)
 {
 	DesiredServerName = ServerName;
@@ -94,6 +122,29 @@ void UFPSPlaygroundGameInstance::Host(FString ServerName)
 	}
 }
 
+void UFPSPlaygroundGameInstance::CreateSession()
+{
+	if (SessionInterface.IsValid())
+	{
+		FOnlineSessionSettings SessionSettings;
+		if (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+		{
+			SessionSettings.bIsLANMatch = true;
+		}
+		else
+		{
+			SessionSettings.bIsLANMatch = false;
+		}
+
+		SessionSettings.NumPublicConnections = 5;
+		SessionSettings.bShouldAdvertise = true;
+		SessionSettings.bUsesPresence = true;
+		SessionSettings.Set(SERVER_NAME_SETTINGS_KEY, DesiredServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
+	}
+}
+
 void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 {
 	if (!Success) 
@@ -111,6 +162,22 @@ void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool
 
 	World->ServerTravel("/Game/Maps/PreFirstPersonExampleMap?listen");
 }
+
+void UFPSPlaygroundGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
+{
+	if (Success)
+	{
+		CreateSession();
+	}
+}
+
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// JOIN SESSION 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void UFPSPlaygroundGameInstance::RefreshServerList()
 {
@@ -152,37 +219,6 @@ void UFPSPlaygroundGameInstance::OnFindSessionsComplete(bool Success)
 		}
 }
 
-void UFPSPlaygroundGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
-{
-	if (Success)
-	{
-		CreateSession();
-	}
-}
-
-void UFPSPlaygroundGameInstance::CreateSession()
-{
-	if (SessionInterface.IsValid())
-	{
-		FOnlineSessionSettings SessionSettings;
-		if (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
-		{
-			SessionSettings.bIsLANMatch = true;
-		}
-		else
-		{
-			SessionSettings.bIsLANMatch = false;
-		}
-
-		SessionSettings.NumPublicConnections = 5;
-		SessionSettings.bShouldAdvertise = true;
-		SessionSettings.bUsesPresence = true;
-		SessionSettings.Set(SERVER_NAME_SETTINGS_KEY, DesiredServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
-	}
-}
-
 void UFPSPlaygroundGameInstance::Join(uint32 Index)
 {
 	if (!SessionInterface.IsValid()) return;
@@ -216,12 +252,4 @@ void UFPSPlaygroundGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoi
 	if (!ensure(PlayerController != nullptr)) return;
 
 	PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
-}
-
-void UFPSPlaygroundGameInstance::LoadMainMenuLevel()
-{
-	APlayerController* PlayerController = GetFirstLocalPlayerController();
-	if (!ensure(PlayerController != nullptr)) return;
-
-	PlayerController->ClientTravel("/Game/Menu/MainMenu", ETravelType::TRAVEL_Absolute);
 }

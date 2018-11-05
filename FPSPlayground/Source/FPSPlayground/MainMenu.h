@@ -18,32 +18,33 @@ struct FServerData
 	FString HostUsername;
 };
 
-/**
- * 
- */
 UCLASS()
 class FPSPLAYGROUND_API UMainMenu : public UMenuWidget
 {
 	GENERATED_BODY()
-
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OVERRIDES 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
-
 	UMainMenu(const FObjectInitializer & ObjectInitializer);
 
-	void SetServerList(TArray<FServerData> ServerNames);
-
-	void SelectIndex(uint32 Index);
-
 protected:
-
 	virtual bool Initialize();
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// COMPONENTS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
+	
 
 private:
 	TSubclassOf<class UUserWidget> ServerListClass;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* HostButton;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* JoinButton;
 
@@ -83,15 +84,18 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	class UPanelWidget* ServerList;
 
-	UFUNCTION()
-	void HostServer();
+TOptional<uint32> SelectedIndex;
 
-	UFUNCTION()
-	void JoinServer();
 
-	UFUNCTION()
-	void QuitGame();
 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// COMPONENT FUNCTIONS 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+public:
+	void SelectIndex(uint32 Index);
+	void SetServerList(TArray<FServerData> ServerNames);
+
+protected:
 	UFUNCTION()
 	void OpenMainMenu();
 
@@ -99,9 +103,16 @@ private:
 	void OpenHostMenu();
 
 	UFUNCTION()
+	void HostServer();
+
+	UFUNCTION()
 	void OpenJoinMenu();
 
-	TOptional<uint32> SelectedIndex;
-
 	void UpdateChildren();
+
+	UFUNCTION()
+	void JoinServer();
+
+	UFUNCTION()
+	void QuitGame();
 };
