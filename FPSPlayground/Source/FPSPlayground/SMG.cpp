@@ -14,7 +14,7 @@ ASMG::ASMG()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	SMGMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SMGMesh"));
+	//SMGMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SMGMesh"));
 
 	RootComponent = Root;
 }
@@ -26,6 +26,11 @@ void ASMG::BeginPlay()
 
 	UWorld* World = GetWorld();
 	if (!ensure(World != nullptr)) return;
+
+	APlayerController* PlayerController = World->GetFirstLocalPlayerFromController()->GetPlayerController(World);
+	if (!ensure(PlayerController != nullptr)) return;
+
+	this->SetOwner(PlayerController);
 
 	FPSCharacter = Cast<AFPSPlaygroundCharacter>(UGameplayStatics::GetPlayerCharacter(World, 0));
 }

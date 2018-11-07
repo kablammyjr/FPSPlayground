@@ -19,8 +19,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OVERRIDES 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -31,25 +29,23 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 {
 	bReplicates = true;
 
-	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
-	RootComponent = GetCapsuleComponent();
-
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 
-
-
 	/////////////// COMPONENTS //////////////////
 
-	// Create a CameraComponent	
+	// Set size for collision capsule
+	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+	RootComponent = GetCapsuleComponent();
+
+	// Create and setup CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
+	// Create a character mesh component that will only be seen by owner
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
 	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
@@ -58,18 +54,28 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	Mesh1P->RelativeRotation = FRotator(1.9f, -19.19f, 5.2f);
 	Mesh1P->RelativeLocation = FVector(-0.5f, -4.4f, -155.7f);
 
+	// Create a character mesh component that will only be seen by others
 	Mesh3P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh3P"));
 	Mesh3P->bOwnerNoSee = true;
 	Mesh3P->bCastDynamicShadow = false;
 	Mesh3P->CastShadow = false;
 	Mesh3P->SetupAttachment(GetCapsuleComponent());
 
+	// Create a gun mesh that will only be seen by others
+	GunMesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh1P"));
+	GunMesh1P->bOnlyOwnerSee = true;
+	GunMesh1P->bCastDynamicShadow = false;
+	GunMesh1P->CastShadow = false;
+	GunMesh1P->SetupAttachment(Mesh1P);
+
+	// Create a gun mesh that will only be seen by others
 	GunMesh3P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh3P"));
-	GunMesh3P->bOwnerNoSee = true;
+	GunMesh3P->bOwnerNoSee = true; 
 	GunMesh3P->bCastDynamicShadow = false;
 	GunMesh3P->CastShadow = false;
 	GunMesh3P->SetupAttachment(Mesh3P);
 
+	// Create a location in front of camera to spawn projectiles at
 	MuzzleLocation = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzleLocation"));
 	MuzzleLocation->SetupAttachment(FirstPersonCameraComponent);
 }
@@ -84,21 +90,22 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("SMG blueprint missing."));
 		return;
 	}
-
 	SMG = GetWorld()->SpawnActor<ASMG>(SMGBlueprint);
-
-	if (SMG != nullptr)
+	/*if (SMG != nullptr)
 	{
-		SMG->SetOwner(this);
 		SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-	}
+	}*/
 
-
+	// Attach gun mesh to 3rd person mesh to be seen only by self
+	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+	// Attach gun mesh to 3rd person mesh to be seen by others
 	GunMesh3P->AttachToComponent(Mesh3P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 
+	// Stores 1st and 3rd person mesh's animinstances
 	Mesh1PAnimInstance = Mesh1P->GetAnimInstance();
 	Mesh3PAnimInstance = Mesh3P->GetAnimInstance();
 
+	// Event to declare that the weapon has been spawned
 	SpawnedWeapon();
 }
 
@@ -109,11 +116,11 @@ void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 
 
 
+
+
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // INPUT
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -123,13 +130,15 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	// Bind crouch events
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AFPSPlaygroundCharacter::StartCrouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AFPSPlaygroundCharacter::StopCrouch);
 
-	// Bind fire event
+	// Bind fire events
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFPSPlaygroundCharacter::PullTrigger);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseTrigger);
 
+	// Bind aim down sights events
 	PlayerInputComponent->BindAction("ADS", IE_Pressed, this, &AFPSPlaygroundCharacter::OnADS);
 	PlayerInputComponent->BindAction("ADS", IE_Released, this, &AFPSPlaygroundCharacter::ReleaseADS);
 
@@ -149,13 +158,11 @@ void AFPSPlaygroundCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 
 
+
+
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MOVEMENT
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 void AFPSPlaygroundCharacter::MoveForward(float Value)
 {
 
@@ -201,14 +208,12 @@ void AFPSPlaygroundCharacter::StopCrouch()
 
 
 
+
+
+
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FIRING
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 void AFPSPlaygroundCharacter::PullTrigger()
 {
 	SMG->OnFireSMG();
@@ -278,11 +283,13 @@ void AFPSPlaygroundCharacter::FireAnimationSMG(UAnimMontage* FireAnimation1P)
 void AFPSPlaygroundCharacter::OnADS()
 {
 	bIsADS = true;
+	UpdateADSFOV();
 }
 
 void AFPSPlaygroundCharacter::ReleaseADS()
 {
 	bIsADS = false;
+	UpdateADSFOV();
 }
 
 

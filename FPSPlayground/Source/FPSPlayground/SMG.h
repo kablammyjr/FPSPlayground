@@ -45,8 +45,8 @@ private:
 	UPROPERTY(VisibleDefaultsOnly)
 	USceneComponent* Root;
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* SMGMesh;
+	/*UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	class USkeletalMeshComponent* SMGMesh;*/
 
 	AFPSPlaygroundCharacter* FPSCharacter;
 	

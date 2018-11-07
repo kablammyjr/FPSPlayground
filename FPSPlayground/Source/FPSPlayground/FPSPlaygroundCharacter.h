@@ -26,6 +26,8 @@ public:
 
 protected:
 	virtual void BeginPlay();
+	// Sets up player input
+	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
 
 
@@ -36,39 +38,48 @@ protected:
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
+	// Location in front of the character that projectiles spawn at
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneComponent* MuzzleLocation;
 
+	// Character mesh that only other players can see
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Mesh)
 	class USkeletalMeshComponent* Mesh3P;
 
 protected:
+	// SMG class object
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Weapons)
 	ASMG* SMG;
 
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
-
 private:
-	/** Pawn mesh: 1st person view (arms; seen only by self) */
+	// Character arms mesh that is only seen by the owning player
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* Mesh1P;
 
+	// SMG blueprint class object
 	UPROPERTY(EditDefaultsOnly, Category = Weapons)
 	TSubclassOf<ASMG> SMGBlueprint;
 
+	// Gun mesh to be attached to the arms of the character mesh seen only by owning player
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	class USkeletalMeshComponent* GunMesh1P;
+
+	// Gun mesh to be attached to the arms of the character mesh seen by only other players
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	class USkeletalMeshComponent* GunMesh3P;
 
-	/** First person camera */
+	// First person camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
 
-	/** Projectile class to spawn */
+	// Projectile class to spawn
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AFPSPlaygroundProjectile> ProjectileClass;
 
+	// Sets up character movement
 	class UCharacterMovementComponent* CharacterMovementComponent;
-
+	
+	// To store the animinstance set for both character meshes
 	UAnimInstance* Mesh1PAnimInstance;
 	UAnimInstance* Mesh3PAnimInstance;
 
@@ -104,10 +115,12 @@ protected:
 	// @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
 	void LookUpAtRate(float Rate);
 
+	// Called via input to make your character crouch
 	void StartCrouch();
 	void StopCrouch();
 
 private:
+	// The amount of throttle given to forward movement
 	float MoveForwardAxis;
 
 
@@ -118,39 +131,37 @@ private:
 	// FIRING 
 	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	public:
+public:
+	// Called via input | Calculates bullet rotation and calls the server to spawn the projectile
 	UFUNCTION()
 	void OnFire(FRotator BulletRotation);
-
+	// Plays the animation for gun recoil
 	UFUNCTION()
 	void FireAnimationSMG(UAnimMontage* FireAnimation1P);
-
+	// Plays a sound when the weapon is fired
 	UFUNCTION()
 	void FireSoundSMG(USoundBase* Sound);
-
+	// Called via input | Zooms camera in and increases gun accuracy
 	UFUNCTION()
 	void OnADS();
-
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void ReleaseADS();
-
-	/** AnimMontage to play each time we fire */
+	//AnimMontage to play each time we fire
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	class UAnimMontage* SMGFireAnimation3P;
-
+	// Event that triggers after the weapon has spawned
 	UFUNCTION(BlueprintImplementableEvent)
 	void SpawnedWeapon(); 
 
-	UPROPERTY()
-	bool bIsADS = false;
-
 	///////////// RPCs START ///////////////
 
+	// Plays gun firing sound at a location on the server
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_FireSoundSMG(USoundBase* Sound);
 	void Server_FireSoundSMG_Implementation(USoundBase* Sound);
 	bool Server_FireSoundSMG_Validate(USoundBase* Sound);
 
+	// Spawns a projectile on the server
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_OnFireSMG(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
 	void Server_OnFireSMG_Implementation(FRotator MuzzleRotation, FRotator BulletRotation, FVector MuzzleLocationSpawn);
@@ -159,11 +170,18 @@ private:
 	///////////// RPCs END ///////////////
 
 protected:
+	// Called via input | Fires current equipped weapon
 	UFUNCTION()
 	void PullTrigger();
-
 	UFUNCTION()
 	void ReleaseTrigger();
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateADSFOV();
+
+private:
+	// Returns true or false when the ADS input is pressed or released
+	UPROPERTY()
+	bool bIsADS = false;
 
 
 
@@ -174,11 +192,12 @@ protected:
 	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public:
+	// Returns whether the character is currently moving
 	UFUNCTION(BlueprintCallable)
 	bool GetIsMoving();
-
+	// Returns whether the character is currently crouching
 	bool GetIsCrouched() { return bIsCrouched; }
-
+	// Returns whether the character is currently aiming down sights
 	UFUNCTION(BlueprintCallable)
 	bool GetIsADS() { return bIsADS; }
 
