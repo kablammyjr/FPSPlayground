@@ -204,7 +204,10 @@ protected:
 	float Health = 100;
 
 	UFUNCTION()
-	void PlayerDead();
+	void Dead();
+
+private:
+	class AFPSPlaygroundGameMode* GameMode;
 
 
 

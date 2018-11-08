@@ -5,8 +5,7 @@
 #include "FPSPlaygroundCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
-AFPSPlaygroundGameMode::AFPSPlaygroundGameMode()
-	: Super()
+AFPSPlaygroundGameMode::AFPSPlaygroundGameMode(): Super()
 {
 	// set default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnClassFinder(TEXT("/Game/Characters/Blueprints/FirstPersonCharacter"));
@@ -14,4 +13,17 @@ AFPSPlaygroundGameMode::AFPSPlaygroundGameMode()
 
 	// use our custom HUD class
 	HUDClass = AFPSPlaygroundHUD::StaticClass();
+}
+
+void AFPSPlaygroundGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FPSCharacter = Cast<AFPSPlaygroundCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+}
+
+void AFPSPlaygroundGameMode::SpawnPlayer(AController* Controller)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Spawn from controller: %s"), *Controller->GetName());
+	Controller->UnPossess();
 }

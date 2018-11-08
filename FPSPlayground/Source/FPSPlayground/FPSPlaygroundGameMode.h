@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "FPSPlaygroundGameMode.generated.h"
 
+class AFPSPlaygroundCharacter;
+
 UCLASS(minimalapi)
 class AFPSPlaygroundGameMode : public AGameModeBase
 {
@@ -13,6 +15,16 @@ class AFPSPlaygroundGameMode : public AGameModeBase
 
 public:
 	AFPSPlaygroundGameMode();
+
+	void SpawnPlayer(AController* Controller);
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+private:
+
+	AFPSPlaygroundCharacter* FPSCharacter;
 };
 
 

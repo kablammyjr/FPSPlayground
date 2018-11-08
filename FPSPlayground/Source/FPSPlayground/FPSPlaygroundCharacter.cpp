@@ -10,6 +10,8 @@
 #include "Animation/AnimInstance.h"
 #include "UnrealNetwork.h"
 #include "FPSPlaygroundProjectile.h"
+#include "FPSPlayerController.h"
+#include "FPSPlaygroundGameMode.h"
 #include "SMG.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -87,6 +89,8 @@ void AFPSPlaygroundCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	GameMode = Cast<AFPSPlaygroundGameMode>(GetWorld()->GetAuthGameMode());
 
 	// SMG spawn and setup
 	if (SMGBlueprint == nullptr) {
@@ -308,17 +312,17 @@ float AFPSPlaygroundCharacter::TakeDamage(float DamageAmount, struct FDamageEven
 
 	if (Health <= 0.0f)
 	{
-		PlayerDead();
+		Dead();
 	}
 
 	return DamageAmount;
 }
 
-void AFPSPlaygroundCharacter::PlayerDead()
+void AFPSPlaygroundCharacter::Dead()
 {
 	if (Role = ROLE_Authority)
 	{
-		GetController()->UnPossess();
+		GameMode->SpawnPlayer(GetController());
 		BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	}
 }
