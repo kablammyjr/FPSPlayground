@@ -206,6 +206,9 @@ protected:
 	UFUNCTION()
 	void Dead();
 
+	UFUNCTION()
+	void DestroyAfterDeath();
+
 private:
 	class AFPSPlaygroundGameMode* GameMode;
 

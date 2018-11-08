@@ -324,7 +324,14 @@ void AFPSPlaygroundCharacter::Dead()
 	{
 		GameMode->SpawnPlayer(GetController());
 		BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFPSPlaygroundCharacter::DestroyAfterDeath, 10.0f, false);
 	}
+}
+
+void AFPSPlaygroundCharacter::DestroyAfterDeath()
+{
+	Destroy();
 }
 
 
