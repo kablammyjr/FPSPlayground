@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "FPSPlaygroundProjectile.generated.h"
 
+class AFPSPlaygroundCharacter;
+
 UCLASS(config=Game)
 class AFPSPlaygroundProjectile : public AActor
 {
@@ -57,10 +59,16 @@ public:
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 private:
+
+	AFPSPlaygroundCharacter* FPSCharacter;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Particles, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* BulletHit;
 
 	FTransform BulletHitTransform;
+
+	UPROPERTY(EditDefaultsOnly)
+	int32 BulletDamage = 10;
 
 
 
@@ -72,5 +80,6 @@ public:
 	FORCEINLINE class USphereComponent* GetCollisionComp() const { return CollisionComp; }
 	/** Returns ProjectileMovement subobject **/
 	FORCEINLINE class UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
+	int32 GetBulletDamage() { return BulletDamage; }
 };
 

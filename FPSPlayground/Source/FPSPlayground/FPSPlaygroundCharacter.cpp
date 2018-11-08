@@ -39,6 +39,9 @@ AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 	RootComponent = GetCapsuleComponent();
 
+	BulletCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("BulletCollision"));
+	BulletCollision->SetupAttachment(GetCapsuleComponent());
+
 	// Create and setup CameraComponent	
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
@@ -91,10 +94,6 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		return;
 	}
 	SMG = GetWorld()->SpawnActor<ASMG>(SMGBlueprint);
-	/*if (SMG != nullptr)
-	{
-		SMG->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-	}*/
 
 	// Attach gun mesh to 3rd person mesh to be seen only by self
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
@@ -250,9 +249,9 @@ void AFPSPlaygroundCharacter::Server_OnFireSMG_Implementation(FRotator MuzzleRot
 	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
 	// Spawn the projectile at the muzzle
-	if (ProjectileClass != NULL)
+	if (BulletBlueprint != NULL)
 	{
-		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(ProjectileClass, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
+		GetWorld()->SpawnActor<AFPSPlaygroundProjectile>(BulletBlueprint, MuzzleLocationSpawn, MuzzleRotation + BulletRotation, ActorSpawnParams);
 	}
 }
 
@@ -292,6 +291,37 @@ void AFPSPlaygroundCharacter::ReleaseADS()
 	UpdateADSFOV();
 }
 
+
+
+
+
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ON TAKE DAMAGE 
+/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+float AFPSPlaygroundCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser)
+{
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+	Health -= DamageAmount;
+
+	UE_LOG(LogTemp, Warning, TEXT("%s Health: %f"), *this->GetName(), Health);
+
+	if (Health <= 0.0f)
+	{
+		PlayerDead();
+	}
+
+	return DamageAmount;
+}
+
+void AFPSPlaygroundCharacter::PlayerDead()
+{
+	if (Role = ROLE_Authority)
+	{
+		GetController()->UnPossess();
+		BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	}
+}
 
 
 

@@ -52,10 +52,16 @@ void AFPSPlaygroundProjectile::BeginPlay()
 		SetReplicates(true);
 		SetReplicateMovement(true);
 	}
+
+	FPSCharacter = Cast<AFPSPlaygroundCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	
 	FTimerHandle FuzeTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &AFPSPlaygroundProjectile::MakeVisible, TimeUntilVisible, false);
 }
+
+
+
+
 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MOVEMENT 
@@ -65,6 +71,10 @@ void AFPSPlaygroundProjectile::MakeVisible()
 {
 	this->SetActorHiddenInGame(false);
 }
+
+
+
+
 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ON HIT 
@@ -88,6 +98,17 @@ void AFPSPlaygroundProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* Other
 			BulletHitTransform.SetScale3D(GetActorScale3D() * 1.5f);
 			
 			UGameplayStatics::SpawnEmitterAtLocation(World, BulletHit, BulletHitTransform, true, EPSCPoolMethod::None);
+		}
+		if (OtherComp->ComponentHasTag("BulletCollision"))
+		{	
+			AFPSPlaygroundCharacter* OtherPlayer = Cast<AFPSPlaygroundCharacter>(OtherActor);
+
+			if (OtherPlayer->GetLocalRole() == ROLE_Authority)
+			{
+				AController* OtherPlayerController = OtherPlayer->GetController();
+				FDamageEvent DamageEvent;
+				OtherPlayer->TakeDamage(10.0f, DamageEvent, OtherPlayerController, this);
+			}
 		}
 
 		Destroy();
