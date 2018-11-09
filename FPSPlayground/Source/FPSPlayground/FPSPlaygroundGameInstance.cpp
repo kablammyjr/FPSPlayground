@@ -160,7 +160,7 @@ void UFPSPlaygroundGameInstance::OnCreateSessionComplete(FName SessionName, bool
 	UWorld* World = GetWorld();
 	if (!ensure(World != nullptr)) return;
 
-	World->ServerTravel("/Game/Maps/PreFirstPersonExampleMap?listen");
+	World->ServerTravel("/Game/Maps/FirstPersonExampleMap?listen");
 }
 
 void UFPSPlaygroundGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)

@@ -24,13 +24,15 @@ void ASMG::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UE_LOG(LogTemp, Warning, TEXT("Begin play: %s"),*this->GetName());
+
 	UWorld* World = GetWorld();
 	if (!ensure(World != nullptr)) return;
 
 	APlayerController* PlayerController = World->GetFirstLocalPlayerFromController()->GetPlayerController(World);
 	if (!ensure(PlayerController != nullptr)) return;
 
-	this->SetOwner(PlayerController);
+	/*this->SetOwner(PlayerController);*/
 
 	FPSCharacter = Cast<AFPSPlaygroundCharacter>(UGameplayStatics::GetPlayerCharacter(World, 0));
 }

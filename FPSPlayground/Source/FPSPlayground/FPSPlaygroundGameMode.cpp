@@ -5,6 +5,7 @@
 #include "FPSPlaygroundCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "FPSPlaygroundCharacter.h"
+#include "SMG.h"
 
 AFPSPlaygroundGameMode::AFPSPlaygroundGameMode(): Super()
 {

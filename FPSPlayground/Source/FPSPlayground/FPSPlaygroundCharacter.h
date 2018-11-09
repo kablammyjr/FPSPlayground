@@ -48,9 +48,14 @@ public:
 	class USkeletalMeshComponent* Mesh3P;
 
 protected:
+
 	// SMG class object
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Weapons)
 	ASMG* SMG;
+
+	// SMG blueprint class object
+	UPROPERTY(EditDefaultsOnly, Category = Weapons)
+	TSubclassOf<ASMG> SMGBlueprint;
 
 	// Bullet class object
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Weapons)
@@ -60,10 +65,6 @@ private:
 	// Character arms mesh that is only seen by the owning player
 	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
 	class USkeletalMeshComponent* Mesh1P;
-
-	// SMG blueprint class object
-	UPROPERTY(EditDefaultsOnly, Category = Weapons)
-	TSubclassOf<ASMG> SMGBlueprint;
 
 	// Projectile class to spawn
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)

@@ -97,8 +97,13 @@ void AFPSPlaygroundCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("SMG blueprint missing."));
 		return;
 	}
+	
 	SMG = GetWorld()->SpawnActor<ASMG>(SMGBlueprint);
 
+	UE_LOG(LogTemp, Warning, TEXT("Spawning: %s"), *SMG->GetName());
+	SMG->SetOwner(this);
+	
+	SMG->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 	// Attach gun mesh to 3rd person mesh to be seen only by self
 	GunMesh1P->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	// Attach gun mesh to 3rd person mesh to be seen by others
@@ -311,7 +316,7 @@ float AFPSPlaygroundCharacter::TakeDamage(float DamageAmount, struct FDamageEven
 	UE_LOG(LogTemp, Warning, TEXT("%s Health: %f"), *this->GetName(), Health);
 
 	if (Health <= 0.0f)
-	{
+	{	
 		Dead();
 	}
 
@@ -320,17 +325,15 @@ float AFPSPlaygroundCharacter::TakeDamage(float DamageAmount, struct FDamageEven
 
 void AFPSPlaygroundCharacter::Dead()
 {
-	if (Role = ROLE_Authority)
-	{
-		GameMode->SpawnPlayer(GetController());
-		BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFPSPlaygroundCharacter::DestroyAfterDeath, 10.0f, false);
-	}
+	GameMode->SpawnPlayer(GetController());
+	BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFPSPlaygroundCharacter::DestroyAfterDeath, 10.0f, false);
 }
 
 void AFPSPlaygroundCharacter::DestroyAfterDeath()
 {
+	SMG->Destroy();
 	Destroy();
 }
 
