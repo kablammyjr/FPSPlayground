@@ -21,12 +21,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OVERRIDES 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-}
-
 AFPSPlaygroundCharacter::AFPSPlaygroundCharacter()
 {
 	bReplicates = true;
@@ -90,7 +84,7 @@ void AFPSPlaygroundCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	GameMode = Cast<AFPSPlaygroundGameMode>(GetWorld()->GetAuthGameMode());
+	//GameMode = Cast<AFPSPlaygroundGameMode>(GetWorld()->GetAuthGameMode());
 
 	// SMG spawn and setup
 	if (SMGBlueprint == nullptr) {
@@ -120,6 +114,24 @@ void AFPSPlaygroundCharacter::BeginPlay()
 void AFPSPlaygroundCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AFPSPlaygroundCharacter::PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker)
+{
+	Super::PreReplication(ChangedPropertyTracker);
+
+	// Only replicate this property for a short duration after it changes so join in progress players don't get spammed with fx when joining late
+	DOREPLIFETIME_ACTIVE_OVERRIDE(AFPSPlaygroundCharacter, LastTakeHitInfo, GetWorld() && GetWorld()->GetTimeSeconds() < LastTakeHitTimeTimeout);
+}
+
+void AFPSPlaygroundCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AFPSPlaygroundCharacter, LastTakeHitInfo, COND_Custom);
+
+	// everyone
+	DOREPLIFETIME(AFPSPlaygroundCharacter, Health);
 }
 
 
@@ -307,36 +319,129 @@ void AFPSPlaygroundCharacter::ReleaseADS()
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ON TAKE DAMAGE 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-float AFPSPlaygroundCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser)
+float AFPSPlaygroundCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser)
 {
-	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	
-	Health -= DamageAmount;
-
-	UE_LOG(LogTemp, Warning, TEXT("%s Health: %f"), *this->GetName(), Health);
-
-	if (Health <= 0.0f)
-	{	
-		Dead();
+	if (Health <= 0.f)
+	{
+		return 0.f;
 	}
 
-	return DamageAmount;
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if (ActualDamage > 0.f)
+	{
+		Health -= ActualDamage;
+		if (Health <= 0)
+		{
+			Die(ActualDamage, DamageEvent, EventInstigator, DamageCauser);
+		}
+		else
+		{
+			PlayHit(ActualDamage, DamageEvent, EventInstigator ? EventInstigator->GetPawn() : NULL, DamageCauser);
+		}
+
+		MakeNoise(1.0f, EventInstigator ? EventInstigator->GetPawn() : this);
+	}
+
+	return ActualDamage;
 }
 
-void AFPSPlaygroundCharacter::Dead()
+
+bool AFPSPlaygroundCharacter::CanDie(float KillingDamage, FDamageEvent const& DamageEvent, AController* Killer, AActor* DamageCauser) const
 {
-	GameMode->SpawnPlayer(GetController());
-	BulletCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AFPSPlaygroundCharacter::DestroyAfterDeath, 10.0f, false);
+	if (bIsDying										// already dying
+		|| IsPendingKill()								// already destroyed
+		|| Role != ROLE_Authority						// not authority
+		|| GetWorld()->GetAuthGameMode<AFPSPlaygroundGameMode>() == NULL
+		|| GetWorld()->GetAuthGameMode<AFPSPlaygroundGameMode>()->GetMatchState() == MatchState::LeavingMap)	// level transition occurring
+	{
+		return false;
+	}
+
+	return true;
 }
 
-void AFPSPlaygroundCharacter::DestroyAfterDeath()
+
+bool AFPSPlaygroundCharacter::Die(float KillingDamage, FDamageEvent const& DamageEvent, AController* Killer, AActor* DamageCauser)
 {
-	SMG->Destroy();
-	Destroy();
+	if (!CanDie(KillingDamage, DamageEvent, Killer, DamageCauser))
+	{
+		return false;
+	}
+
+	Health = FMath::Min(0.0f, Health);
+
+	// if this is an environmental death then refer to the previous killer so that they receive credit (knocked into lava pits, etc)
+	UDamageType const* const DamageType = DamageEvent.DamageTypeClass ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>() : GetDefault<UDamageType>();
+	Killer = GetDamageInstigator(Killer, *DamageType);
+
+	NetUpdateFrequency = GetDefault<AFPSPlaygroundCharacter>()->NetUpdateFrequency;
+	GetCharacterMovement()->ForceReplicationUpdate();
+
+	OnDeath(KillingDamage, DamageEvent, Killer ? Killer->GetPawn() : NULL, DamageCauser);
+	return true;
 }
 
+
+void AFPSPlaygroundCharacter::OnDeath(float KillingDamage, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser)
+{
+	if (bIsDying)
+	{
+		return;
+	}
+
+	bReplicateMovement = false;
+	TearOff();
+	bIsDying = true;
+
+	if (Role == ROLE_Authority)
+	{
+		ReplicateHit(KillingDamage, DamageEvent, PawnInstigator, DamageCauser, true);
+	}
+
+	DetachFromControllerPendingDestroy();
+
+	SetActorEnableCollision(true);
+
+	// disable collisions on capsule
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+}
+
+void AFPSPlaygroundCharacter::PlayHit(float DamageTaken, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser)
+{
+	if (Role == ROLE_Authority)
+	{
+		ReplicateHit(DamageTaken, DamageEvent, PawnInstigator, DamageCauser, false);
+	}
+
+	if (DamageTaken > 0.f)
+	{
+		ApplyDamageMomentum(DamageTaken, DamageEvent, PawnInstigator, DamageCauser);
+	}
+}
+
+void AFPSPlaygroundCharacter::ReplicateHit(float Damage, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser, bool bKilled)
+{
+	const float TimeoutTime = GetWorld()->GetTimeSeconds() + 0.5f;
+}
+
+void AFPSPlaygroundCharacter::OnRep_LastTakeHitInfo()
+{
+	if (LastTakeHitInfo.bKilled)
+	{
+		OnDeath(LastTakeHitInfo.ActualDamage, LastTakeHitInfo.GetDamageEvent(), LastTakeHitInfo.PawnInstigator.Get(), LastTakeHitInfo.DamageCauser.Get());
+	}
+	else
+	{
+		PlayHit(LastTakeHitInfo.ActualDamage, LastTakeHitInfo.GetDamageEvent(), LastTakeHitInfo.PawnInstigator.Get(), LastTakeHitInfo.DamageCauser.Get());
+	}
+}
+
+void AFPSPlaygroundCharacter::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+}
 
 
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

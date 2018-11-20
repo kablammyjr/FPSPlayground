@@ -1,43 +1,20 @@
-// Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "FPSPlaygroundGameMode.generated.h"
 
-class AFPSPlaygroundCharacter;
-
-UCLASS(minimalapi)
-class AFPSPlaygroundGameMode : public AGameModeBase
+/**
+ * 
+ */
+UCLASS()
+class FPSPLAYGROUND_API AFPSPlaygroundGameMode : public AGameMode
 {
 	GENERATED_BODY()
-
-public:
-	AFPSPlaygroundGameMode();
-
-	void SpawnPlayer(AController* Controller);
-
-	virtual void PostLogin(APlayerController* NewPlayer) override;
-
-	void PlayerDeath(AController* Controller);
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-private:
-	UPROPERTY(VisibleDefaultsOnly)
-	AFPSPlaygroundCharacter* FPSCharacter;
-
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AFPSPlaygroundCharacter> FPSCharacterBlueprint;
-
-	UPROPERTY(EditDefaultsOnly)
-	float RespawnDelay = 5.0f;
-
-	void SpawnPlayerTimer(AController* Controller);
+	
+	
+	
+	
 };
-
-
-

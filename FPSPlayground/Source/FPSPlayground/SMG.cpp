@@ -116,7 +116,7 @@ void ASMG::OnFireSMG()
 				}
 
 				FPSCharacter->OnFire(BulletRotation);
-				PlayRecoilAndSoundSMG();
+				//PlayRecoilAndSoundSMG();
 
 				FTimerHandle FuzeTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanContinueFiring, FireRate, false);
@@ -180,7 +180,7 @@ void ASMG::OnContinuousFireSMG()
 				}
 
 				FPSCharacter->OnFire(BulletRotation);
-				PlayRecoilAndSoundSMG();
+				//PlayRecoilAndSoundSMG();
 
 				FTimerHandle FuzeTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(FuzeTimerHandle, this, &ASMG::CanContinueFiring, FireRate, false);

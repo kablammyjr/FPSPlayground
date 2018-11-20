@@ -3,15 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FPSTypes.h"
 #include "Engine.h"
 #include "GameFramework/Character.h"
+#include "FPSPlayground.h"
 #include "FPSPlaygroundCharacter.generated.h"
 
-class UInputComponent;
 class ASMG;
 class AFPSPlaygroundProjectile;
 
-UCLASS(config=Game)
+UCLASS(Abstract)
 class AFPSPlaygroundCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -21,13 +22,20 @@ class AFPSPlaygroundCharacter : public ACharacter
 	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
 	AFPSPlaygroundCharacter();
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 	virtual void Tick(float DeltaTime) override;
+
+	/** Called on the actor right before replication occurs */
+	virtual void PreReplication(IRepChangedPropertyTracker & ChangedPropertyTracker) override;
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 
 protected:
 	virtual void BeginPlay();
 	// Sets up player input
-	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
+
+private:
+
+	virtual void BeginDestroy() override;
 
 
 
@@ -195,20 +203,54 @@ private:
 	// ON TAKE DAMAGE
 	/// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
-	UFUNCTION()
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
+	/** Take damage, handle death */
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
+
+	/** Returns True if the pawn can die in the current state */
+	virtual bool CanDie(float KillingDamage, FDamageEvent const& DamageEvent, AController* Killer, AActor* DamageCauser) const;
+
+	/**
+	* Kills pawn.  Server/authority only.
+	* @param KillingDamage - Damage amount of the killing blow
+	* @param DamageEvent - Damage event of the killing blow
+	* @param Killer - Who killed this pawn
+	* @param DamageCauser - the Actor that directly caused the damage (i.e. the Projectile that exploded, the Weapon that fired, etc)
+	* @returns true if allowed
+	*/
+	virtual bool Die(float KillingDamage, struct FDamageEvent const& DamageEvent, class AController* Killer, class AActor* DamageCauser);
 				
-		
+	// Current health of the Pawn
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = Health)
+	float Health;
+
+	/** Identifies if pawn is in its dying state */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Health)
+	uint32 bIsDying : 1;
 
 protected:
-	UPROPERTY(EditAnywhere, Category = Damage)
-	float Health = 100;
 
-	UFUNCTION()
-	void Dead();
+	/** notification when killed, for both the server and client. */
+	virtual void OnDeath(float KillingDamage, struct FDamageEvent const& DamageEvent, class APawn* InstigatingPawn, class AActor* DamageCauser);
 
+	/** play effects on hit */
+	virtual void PlayHit(float DamageTaken, struct FDamageEvent const& DamageEvent, class APawn* PawnInstigator, class AActor* DamageCauser);
+
+	/** sets up the replication for taking a hit */
+	void ReplicateHit(float Damage, struct FDamageEvent const& DamageEvent, class APawn* InstigatingPawn, class AActor* DamageCauser, bool bKilled);
+
+	/** Replicate where this pawn was last hit and damaged */
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_LastTakeHitInfo)
+	struct FTakeHitInfo LastTakeHitInfo;
+
+	/** Time at which point the last take hit info for the actor times out and won't be replicated; Used to stop join-in-progress effects all over the screen */
+	float LastTakeHitTimeTimeout;
+
+	/** play hit or death on client */
 	UFUNCTION()
-	void DestroyAfterDeath();
+	void OnRep_LastTakeHitInfo();
+	
+
+	
 
 private:
 	class AFPSPlaygroundGameMode* GameMode;

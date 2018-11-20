@@ -3,3 +3,7 @@
 #include "FPSPlayerController.h"
 
 
+void AFPSPlayerController::UnFreeze()
+{
+	ServerRestartPlayer();
+}

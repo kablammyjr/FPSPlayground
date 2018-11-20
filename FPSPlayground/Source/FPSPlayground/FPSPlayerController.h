@@ -13,6 +13,15 @@ UCLASS()
 class FPSPLAYGROUND_API AFPSPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+
+
+public:
+	/** update camera when pawn dies */
+	//virtual void PawnPendingDestroy(APawn* P) override;
+
+	/** respawn after dying */
+	virtual void UnFreeze() override;
 	
 
 };
